@@ -1,57 +1,63 @@
-# 滴灌通澳门交易所 AI Agent集群系统
+# AI Agent集群可视化系统
 
-一个基于Three.js的3D交互界面，展示滴灌通澳门交易所的AI Agent集群。系统以2D椭圆形状展示三层不同功能的AI Agent，提供直观的可视化和交互体验。
+滴灌通澳门交易所AI Agent集群的3D可视化界面，展示了三层椭球形的Agent结构，包括内层基础服务、中层专业支持和外层增值服务。
 
-## 特点
+## 特性
 
-- **直观的三层结构**：通过同心环状结构展示不同类型的AI Agent
-  - 内层：基础服务 - ARM、发行、认购、结算、托管、市场参与者
-  - 中层：专业支持 - 产品、风控、评级、估值、税务、跨境通道、法律、争议解决
-  - 外层：增值服务 - 收入分成ABC、投资案例、投后管理、行业专家、资讯等
-
-- **动态科幻效果**：
-  - 动态粒子效果：沿椭圆轨道流动的粒子
-  - 脉冲环效果：周期性缩放的环形效果
-  - 数据流效果：围绕椭圆运动的弧线段
-
-- **交互功能**：
-  - 点击Agent图标查看详细信息
-  - 与选定的Agent开始对话
-  - 俯瞰视角，清晰展示三层环状结构
-  - 支持旋转和缩放视图
-
-- **优雅的UI设计**：
-  - 深色主题与沉稳配色
-  - 毛玻璃效果面板
-  - 适配不同屏幕尺寸
+- 3D椭球形展示三层Agent结构
+- 交互式界面，可点击Agent图标查看详情
+- 模拟聊天功能
+- 科技感强的界面设计
+- 响应式设计，适配不同屏幕尺寸
 
 ## 技术栈
 
-- **Three.js**：创建3D场景和交互效果
-- **HTML5 & CSS3**：构建用户界面
-- **JavaScript**：实现交互逻辑
-- **Tailwind CSS**：快速构建响应式UI
-- **Font Awesome**：提供丰富的图标资源
+- Three.js - 3D渲染和动画
+- GSAP - 高级动画效果
+- Tailwind CSS - 样式框架
+- 原生JavaScript - 交互逻辑
 
-## 使用方法
+## 访问地址
 
-1. 克隆代码库到本地
-2. 在浏览器中打开`index.html`文件
-3. 使用鼠标拖拽旋转视图，滚轮缩放视图
-4. 点击Agent图标查看详细信息并开始对话
+本项目已部署到GitHub Pages，可通过以下地址访问：
 
-## 文件结构
+```
+https://caesor.github.io/ai-agent-cluster/
+```
 
-- `index.html` - 主HTML文件
-- `styles.css` - CSS样式文件
-- `script.js` - JavaScript主逻辑
+## 本地运行
 
-## 最新更新
+1. 克隆项目到本地
+   ```
+   git clone https://github.com/caesor/ai-agent-cluster.git
+   ```
 
-- 固定俯瞰视角，清晰展示三层环状结构
-- Agent平铺在环内，避免重叠
-- 添加滴灌通澳门交易所官方logo
-- 优化界面布局，解决操作指南与层级介绍重叠问题
+2. 进入项目目录
+   ```
+   cd ai-agent-cluster
+   ```
+
+3. 使用任意HTTP服务器启动项目，例如：
+   ```
+   python3 -m http.server 8000
+   ```
+   或
+   ```
+   npx serve
+   ```
+
+4. 在浏览器中访问 `http://localhost:8000`
+
+## 部署到GitHub Pages
+
+本项目已配置为使用GitHub Pages进行部署。每次推送到`gh-pages`分支时，项目会自动部署。
+
+### 手动部署步骤
+
+1. 确保你的更改已提交到`main`分支
+2. 切换到`gh-pages`分支：`git checkout gh-pages`
+3. 合并更改：`git merge main`
+4. 推送到GitHub：`git push origin gh-pages`
 
 ## 许可证
 
