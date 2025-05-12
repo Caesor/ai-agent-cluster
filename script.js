@@ -1804,7 +1804,7 @@ function startSimulatedConversation(agentName) {
   chatBody.innerHTML = "";
 
   // 添加初始消息
-  const initialMessage = `关于${agent.name}，您有什么想问我的？`;
+  const initialMessage = `关于“${agent.name}”，您有什么想问我的？`;
   addMessageToChat(initialMessage, "agent");
 
   // 生成并显示引导性问题
