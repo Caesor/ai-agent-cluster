@@ -1,0 +1,753 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MIFC路演 - AI Agent交互系统</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        
+        body { font-family: 'Inter', sans-serif; }
+        
+        .gradient-bg {
+            background: linear-gradient(135deg, #0c1425 0%, #1a2332 50%, #0f1419 100%);
+        }
+        
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .ai-message {
+            background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+        }
+        
+        .user-message {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        }
+        
+        .neon-border {
+            box-shadow: 0 0 20px rgba(59, 130, 246, 0.3);
+            border: 1px solid rgba(59, 130, 246, 0.5);
+        }
+        
+        .typing-indicator {
+            animation: pulse 1.5s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 0.6; }
+            50% { opacity: 1; }
+            100% { opacity: 0.6; }
+        }
+        
+        .role-card {
+            transition: all 0.3s ease;
+        }
+        
+        .role-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(59, 130, 246, 0.15);
+        }
+        
+        .role-card.active {
+            background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+        }
+        
+        .scenario-progress {
+            background: linear-gradient(90deg, #3b82f6 0%, #10b981 50%, #f59e0b 100%);
+        }
+    </style>
+</head>
+<body class="gradient-bg min-h-screen text-white">
+    <div class="container mx-auto p-4 h-screen flex flex-col">
+        <!-- Header -->
+        <header class="glass-panel rounded-lg p-4 mb-4 flex justify-between items-center">
+            <div class="flex items-center space-x-4">
+                <div class="w-12 h-12 bg-gradient-to-r from-blue-500 to-cyan-400 rounded-lg flex items-center justify-center">
+                    <i class="fas fa-chart-line text-white text-xl"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold">香港21章投资公司 (MIFC)</h1>
+                    <p class="text-blue-200 text-sm">AI智能路演系统</p>
+                </div>
+            </div>
+            <div class="flex items-center space-x-4">
+                <div class="text-right">
+                    <p class="text-sm text-gray-300">滴灌通投资生态</p>
+                    <p class="text-xs text-blue-200">创新收入分成模式</p>
+                </div>
+                <div class="w-3 h-3 bg-green-400 rounded-full"></div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <div class="flex-1 flex gap-4">
+            <!-- Chat Area -->
+            <div class="flex-1 flex flex-col">
+                <!-- Chat Messages -->
+                <div id="chatContainer" class="flex-1 glass-panel rounded-lg p-4 mb-4 overflow-y-auto">
+                    <div id="messagesContainer" class="space-y-4">
+                        <!-- Initial AI message -->
+                        <div class="flex items-start space-x-3">
+                            <div class="w-8 h-8 ai-message rounded-full flex items-center justify-center">
+                                <i class="fas fa-robot text-white text-sm"></i>
+                            </div>
+                            <div class="ai-message rounded-lg rounded-tl-none p-3 max-w-md">
+                                <p class="text-white">欢迎来到MIFC路演系统！我是您的AI投资顾问。请选择右侧的角色开始体验完整的投资流程。</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Chat Input -->
+                <div class="glass-panel rounded-lg p-4">
+                    <div class="flex space-x-3">
+                        <input 
+                            id="messageInput" 
+                            type="text" 
+                            placeholder="输入您的问题..." 
+                            class="flex-1 bg-gray-800 border border-gray-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-blue-400"
+                        >
+                        <button 
+                            id="sendButton" 
+                            class="bg-gradient-to-r from-blue-500 to-cyan-400 hover:from-blue-600 hover:to-cyan-500 px-6 py-2 rounded-lg font-medium transition-all"
+                        >
+                            <i class="fas fa-paper-plane"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Panel -->
+            <div class="w-80 space-y-4">
+                <!-- Scenario Progress -->
+                <div class="glass-panel rounded-lg p-4">
+                    <h3 class="text-lg font-semibold mb-3">路演进度</h3>
+                    <div class="space-y-3">
+                        <div class="scenario-progress h-2 rounded-full"></div>
+                        <div class="flex justify-between text-xs text-gray-300">
+                            <span>场景1</span>
+                            <span>场景2</span>
+                            <span>场景3</span>
+                        </div>
+                        <div id="currentScenario" class="text-center text-blue-300 font-medium">
+                            当前：场景1 - 融资方接触
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Current Act Info -->
+                <div class="glass-panel rounded-lg p-4">
+                    <h3 class="text-lg font-semibold mb-3">当前戏幕</h3>
+                    <div id="currentActInfo" class="space-y-2">
+                        <div class="text-sm text-blue-300 font-medium" id="actTitle">第1幕：MIFC实力展示</div>
+                        <div class="text-xs text-gray-300" id="actDescription">AI介绍MIFC资金实力和行业资源</div>
+                        <div class="w-full bg-gray-700 rounded-full h-2 mt-2">
+                            <div id="actProgress" class="bg-gradient-to-r from-blue-500 to-cyan-400 h-2 rounded-full transition-all duration-500" style="width: 20%"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Act Selection -->
+                <div class="glass-panel rounded-lg p-4">
+                    <h3 class="text-lg font-semibold mb-3">戏幕控制</h3>
+                    <div class="mb-3">
+                        <select id="scenarioSelect" class="w-full bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-blue-400">
+                            <option value="1">场景1：融资方接触</option>
+                            <option value="2">场景2：投资伙伴参与</option>
+                            <option value="3">场景3：MIFC审核</option>
+                        </select>
+                    </div>
+                    <div id="actButtons" class="space-y-2">
+                        <!-- Act buttons will be generated dynamically -->
+                    </div>
+                </div>
+
+                <!-- Quick Actions -->
+                <div class="glass-panel rounded-lg p-4">
+                    <h3 class="text-lg font-semibold mb-3">快速操作</h3>
+                    <div class="space-y-2">
+                        <button id="resetDemo" class="w-full bg-gray-700 hover:bg-gray-600 rounded-lg p-2 text-sm transition-all">
+                            <i class="fas fa-refresh mr-2"></i>重置演示
+                        </button>
+                        <button id="exportData" class="w-full bg-blue-700 hover:bg-blue-600 rounded-lg p-2 text-sm transition-all">
+                            <i class="fas fa-download mr-2"></i>导出报告
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 路演脚本数据 - 按戏幕组织
+        const roadshowScripts = {
+            scenario1: {
+                acts: [
+                    {
+                        title: '第1幕：MIFC实力展示',
+                        description: 'AI介绍MIFC资金实力和行业资源',
+                        dialogue: [
+                            {
+                                type: 'ai',
+                                content: '李总，您好！我是滴灌通的智能投资顾问。非常荣幸为您介绍香港21章投资公司（MIFC）的强大实力：<br><br>💰 <strong>资金规模</strong>：管理资金超过500亿港币<br>🏭 <strong>行业覆盖</strong>：新能源、科技、医疗、金融等15个核心领域<br>🤝 <strong>合作网络</strong>：200+优质投资伙伴，遍布亚太地区<br>📈 <strong>投资回报</strong>：平均项目年化回报率15-25%<br><br>我们致力于为优质企业提供全生命周期的投资服务。'
+                            }
+                        ]
+                    },
+                    {
+                        title: '第2幕：互动答疑',
+                        description: '融资方提问，深入了解核心概念',
+                        dialogue: [
+                            {
+                                type: 'user',
+                                content: '什么是收入分成模式？这与传统投资有什么不同？'
+                            },
+                            {
+                                type: 'ai',
+                                content: '收入分成是MIFC的核心创新模式！与传统股权投资不同：<br><br>🔹 <strong>传统模式</strong>：投资换股权，依靠股权增值退出<br>🔹 <strong>收入分成模式</strong>：投资+股权+收入分成，三重保障<br><br>具体优势：<br>• 📉 <strong>风险更低</strong>：不完全依赖股权估值波动<br>• 💵 <strong>现金流稳定</strong>：按企业收入比例持续分成<br>• 🚪 <strong>退出灵活</strong>：可提前退出或延长合作<br>• 🤝 <strong>利益一致</strong>：投资方与企业共同成长'
+                            },
+                            {
+                                type: 'user',
+                                content: 'MIFC作为投资机构，有什么特殊优势？'
+                            },
+                            {
+                                type: 'ai',
+                                content: 'MIFC在亚太投资领域独树一帜：<br><br>🏛️ <strong>机构优势</strong>：<br>• 香港注册，国际化运作<br>• 多家知名机构联合组成<br>• 专业投资团队40+人<br><br>🔧 <strong>服务优势</strong>：<br>• 丰富的行业资源整合<br>• 严格的五维风控体系<br>• 完善的投后增值服务<br>• 全球化的退出渠道网络<br><br>与一般VC/PE机构相比，我们更注重长期价值创造和风险控制。'
+                            },
+                            {
+                                type: 'user',
+                                content: '滴灌通在整个生态中扮演什么角色？'
+                            },
+                            {
+                                type: 'ai',
+                                content: '滴灌通是连接各方的智能化投资平台：<br><br>🌐 <strong>生态角色</strong>：<br>• 融资方与投资方的智能撮合平台<br>• MIFC的技术服务提供商<br>• 投资流程的数字化管理系统<br><br>🛠️ <strong>核心功能</strong>：<br>• AI智能项目评估和匹配<br>• 自动化KYC和风控流程<br>• 实时投资监控和报告<br>• 收入分成的智能计算和分配<br><br>我们让复杂的投资流程变得简单、透明、高效！'
+                            }
+                        ]
+                    },
+                    {
+                        title: '第3幕：资料收集',
+                        description: '引导融资方提供资料，介绍负面清单',
+                        dialogue: [
+                            {
+                                type: 'ai',
+                                content: '李总，为了为您匹配最合适的投资伙伴，我需要了解一些基本情况。首先，让我为您介绍我们的<strong>负面清单</strong>，以下行业和情况暂不在我们的投资范围内：<br><br>❌ <strong>禁投行业</strong>：<br>• 高污染重工业<br>• 涉及违法违规业务<br>• 无实际经营的空壳公司<br>• P2P、虚拟货币等高风险金融<br><br>✅ <strong>优先领域</strong>：<br>• 科技创新型企业<br>• 新能源和环保产业<br>• 医疗健康和生物科技<br>• 先进制造和智能硬件'
+                            },
+                            {
+                                type: 'user',
+                                content: '我们是新能源锂电池技术公司，主要做固态电池研发。'
+                            },
+                            {
+                                type: 'ai',
+                                content: '太好了！新能源电池技术正是我们的重点投资领域。请简单介绍一下：<br><br>📋 <strong>需要了解的信息</strong>：<br>• 公司成立时间和注册资本<br>• 核心技术和专利情况<br>• 近三年财务状况<br>• 团队规模和核心成员背景<br>• 本轮融资需求和用途<br>• 主要客户和市场地位<br><br>这些信息将帮助我们：<br>1. 评估项目投资价值<br>2. 匹配合适的投资伙伴<br>3. 制定最优的融资方案'
+                            },
+                            {
+                                type: 'user',
+                                content: '公司2020年成立，注册资本5000万，拥有15项核心专利，年营收8000万，需要融资1.5亿扩大产能。'
+                            },
+                            {
+                                type: 'ai',
+                                content: '优秀！您的公司数据非常亮眼：<br><br>✅ <strong>评估结果</strong>：<br>• 公司规模：中型成长企业<br>• 技术实力：专利数量充足<br>• 财务状况：营收规模良好<br>• 融资合理性：扩产需求明确<br><br>基于这些信息，我预判您的项目将受到投资伙伴的热烈欢迎！接下来让我为您介绍滴灌通生态的独特价值。'
+                            }
+                        ]
+                    },
+                    {
+                        title: '第4幕：生态价值展示',
+                        description: '介绍滴灌通生态价值和全流程服务',
+                        dialogue: [
+                            {
+                                type: 'ai',
+                                content: '李总，滴灌通生态为融资方提供的不仅仅是资金，而是全方位的成长支持：<br><br>🎯 <strong>精准匹配</strong>：<br>• AI算法分析项目特征<br>• 智能匹配最合适的投资伙伴<br>• 提高融资成功率至80%以上<br><br>💼 <strong>专业服务</strong>：<br>• 法务：合同起草和风险规避<br>• 财务：估值模型和财务规划<br>• 市场：行业分析和战略建议<br>• 技术：产品优化和技术升级<br><br>🚀 <strong>增值赋能</strong>：<br>• 行业资源对接和商务合作<br>• 后续轮次融资的持续支持<br>• 上市辅导和国际化拓展'
+                            },
+                            {
+                                type: 'user',
+                                content: '收入分成模式对我们企业有什么具体好处？'
+                            },
+                            {
+                                type: 'ai',
+                                content: '收入分成模式对您的企业有以下显著优势：<br><br>📈 <strong>资金优势</strong>：<br>• 获得更多资金：MIFC可配资1:1-1:3<br>• 降低稀释：相比纯股权投资，股权稀释更少<br>• 灵活还款：按收入分成，经营压力小<br><br>🤝 <strong>合作优势</strong>：<br>• 投资方更关注企业长期发展<br>• 利益深度绑定，获得更多支持<br>• 投资伙伴往往是行业资深人士<br><br>🎯 <strong>战略优势</strong>：<br>• 保持经营自主权<br>• 获得行业资源和客户渠道<br>• 为后续发展奠定坚实基础'
+                            },
+                            {
+                                type: 'user',
+                                content: '滴灌通生态的全流程服务具体包括哪些？'
+                            },
+                            {
+                                type: 'ai',
+                                content: '🔄 <strong>滴灌通全流程服务体系</strong>：<br><br>📋 <strong>融资前期</strong>：<br>• 项目包装和商业计划书优化<br>• 财务模型搭建和估值建议<br>• 投资伙伴精准匹配和推荐<br>• 融资策略制定和时机把握<br><br>🤝 <strong>融资过程</strong>：<br>• 投资谈判支持和条款优化<br>• 法务尽职调查协助<br>• 合同条款审核和风险提示<br>• 资金监管和安全保障<br><br>🚀 <strong>融资后期</strong>：<br>• 投后管理和业绩监控<br>• 战略规划和运营优化<br>• 后续融资轮次规划<br>• IPO上市辅导服务'
+                            }
+                        ]
+                    },
+                    {
+                        title: '第5幕：案例推荐与故事生成',
+                        description: '推荐真实案例，引导寻找投资伙伴，生成融资故事',
+                        dialogue: [
+                            {
+                                type: 'ai',
+                                content: '基于您的新能源电池项目，让我为您推荐几个成功案例：<br><br>🔋 <strong>案例1：绿能科技</strong><br>• 项目类型：固态电池技术<br>• 投资金额：2000万港币<br>• MIFC配资：4000万港币<br>• 投资伙伴：3家新能源产业基金<br>• 项目回报：年化20%，第3年成功IPO<br><br>⚡ <strong>案例2：智慧储能</strong><br>• 项目类型：储能系统集成<br>• 投资金额：5000万港币<br>• 投资伙伴：2家产业投资者+1家家族办公室<br>• 合作成果：订单增长300%，市场份额翻倍'
+                            },
+                            {
+                                type: 'user',
+                                content: '这些案例很不错！我该如何找到合适的投资伙伴？'
+                            },
+                            {
+                                type: 'ai',
+                                content: '寻找投资伙伴是关键一步！让我为您分析<strong>潜在投资伙伴类型</strong>：<br><br>🏢 <strong>产业投资者</strong>：<br>• 新能源汽车企业（如比亚迪产业基金）<br>• 电池材料供应商<br>• 储能系统集成商<br><br>🏛️ <strong>金融投资者</strong>：<br>• 专注科技的VC/PE基金<br>• 新能源主题基金<br>• 高净值个人投资者<br><br>👨‍💼 <strong>战略投资者</strong>：<br>• 电力公司和能源央企<br>• 汽车制造商<br>• 科技巨头的投资部门<br><br>接下来，我将为您生成专业的融资故事，帮您吸引这些投资伙伴！'
+                            },
+                            {
+                                type: 'user',
+                                content: '投资伙伴的重要性体现在哪里？'
+                            },
+                            {
+                                type: 'ai',
+                                content: '💡 <strong>投资伙伴的重要价值</strong>：<br><br>🎯 <strong>资源价值</strong>：<br>• 行业经验和专业知识分享<br>• 客户渠道和商务资源对接<br>• 供应链优化和成本控制<br>• 技术合作和研发支持<br><br>💰 <strong>资金价值</strong>：<br>• 提供初始投资资金<br>• 触发MIFC的配资机制<br>• 降低企业融资成本<br>• 为后续轮次融资背书<br><br>🤝 <strong>战略价值</strong>：<br>• 参与企业重大决策<br>• 提供战略规划建议<br>• 协助市场拓展和品牌建设<br>• 支持企业长期发展规划<br><br>选择合适的投资伙伴，往往比单纯的资金更重要！'
+                            },
+                            {
+                                type: 'ai',
+                                content: '🎉 基于您提供的信息，我已为您生成了专业的融资故事：<br><br>📖 <strong>《固态电池领域的技术突破者》</strong><br><br>"绿能电池科技，成立于2020年，专注于下一代固态电池技术研发。公司拥有15项核心专利，年营收8000万元，是国内固态电池技术的领军企业之一。在新能源汽车爆发式增长的背景下，公司计划融资1.5亿元用于产能扩张，预计未来三年营收将突破5亿元..."<br><br>📱 <strong>分享方式</strong>：<br>• 🔗 专属投资链接：mifc.ai/project/greentech<br>• 📱 微信小程序二维码<br>• 🖼️ 精美投资海报<br>• 📧 邮件推送模板<br><br>请使用这些材料在您的人脉圈中寻找投资伙伴，一旦有人表达兴趣，系统会自动引导他们进入场景2的投资评估流程！'
+                            }
+                        ]
+                    }
+                ]
+            },
+            scenario2: {
+                acts: [
+                    {
+                        title: '第1幕：项目展示',
+                        description: '投资伙伴进入，AI展示融资方故事',
+                        dialogue: [
+                            {
+                                type: 'ai',
+                                content: '王先生，欢迎了解绿能科技的投资机会！通过融资方分享的链接，您已经成功进入我们的投资评估系统。<br><br>📊 <strong>项目概况</strong>：<br>• 🏢 公司名称：绿能电池科技有限公司<br>• 🔋 主营业务：新能源固态锂电池技术<br>• 🏆 核心优势：15项发明专利，技术国内领先<br>• 📈 财务表现：年营收8000万，增长率35%<br>• 💰 融资需求：1.5亿人民币，用于产能扩张<br><br>这是一个在新能源赛道中非常有潜力的投资标的！'
+                            }
+                        ]
+                    },
+                    {
+                        title: '第2幕：深度调研',
+                        description: '投资伙伴深入了解项目和行业信息',
+                        dialogue: [
+                            {
+                                type: 'user',
+                                content: '新能源电池行业的整体发展前景如何？有什么风险需要注意？'
+                            },
+                            {
+                                type: 'ai',
+                                content: '让我为您提供详细的行业分析报告：<br><br>📈 <strong>市场前景</strong>：<br>• 全球动力电池市场规模2025年预计达到1200亿美元<br>• 中国政策大力支持，2030年新能源车渗透率目标40%<br>• 固态电池是下一代技术方向，市场空间巨大<br><br>⚠️ <strong>风险提示</strong>：<br>• 技术风险：固态电池量产技术仍在完善<br>• 竞争风险：宁德时代、比亚迪等巨头参与<br>• 政策风险：补贴政策变化影响<br><br>📋 <strong>MIFC评估</strong>：整体风险等级为中等，但技术壁垒高，先发优势明显。'
+                            },
+                            {
+                                type: 'user',
+                                content: '这家公司的团队背景和技术实力如何？'
+                            },
+                            {
+                                type: 'ai',
+                                content: '📋 <strong>团队实力分析</strong>：<br><br>👨‍💼 <strong>核心团队</strong>：<br>• CEO李总：清华大学材料科学博士，15年电池行业经验<br>• CTO张博士：中科院研究员，固态电池技术专家<br>• CFO王总：前投行VP，丰富的资本运作经验<br><br>🔬 <strong>技术实力</strong>：<br>• 15项发明专利，其中8项为核心技术专利<br>• 与中科院、清华建立联合实验室<br>• 技术路线清晰，已有小规模量产经验<br>• 产品能量密度比传统锂电池提升30%<br><br>✅ <strong>综合评价</strong>：团队实力雄厚，技术路线先进！'
+                            }
+                        ]
+                    },
+                    {
+                        title: '第3幕：投资案例',
+                        description: '展示相关投资案例，突出收入分成优势',
+                        dialogue: [
+                            {
+                                type: 'ai',
+                                content: '让我为您展示MIFC在新能源领域的成功投资案例：<br><br>🎯 <strong>相似案例1：智慧储能</strong><br>• 投资时间：2022年3月<br>• 投资金额：投资伙伴3000万 + MIFC配资6000万<br>• 收入分成：按营收的8%分成，期限5年<br>• 投资回报：年化收益率22%，第二年即开始分成<br><br>🎯 <strong>相似案例2：绿色动力</strong><br>• 投资金额：5000万港币<br>• 分成模式：营收分成12%，3年回本<br>• 成功退出：第4年被上市公司收购，获得3倍回报<br><br>💡 <strong>收入分成优势</strong>：相比传统股权投资，现金流更稳定，风险更可控！'
+                            },
+                            {
+                                type: 'user',
+                                content: '收入分成的具体参数是如何确定的？'
+                            },
+                            {
+                                type: 'ai',
+                                content: '📊 <strong>收入分成参数设计</strong>：<br><br>🔢 <strong>关键参数</strong>：<br>• 分成比例：基于行业标准，通常5-15%<br>• 分成基数：以审计确认的营业收入为准<br>• 分成期限：根据投资金额，通常3-7年<br>• 保底条款：最低年化回报率保障<br>• 封顶条款：达到约定倍数后可选择退出<br><br>⚖️ <strong>平衡原则</strong>：<br>• 投资方：获得稳定现金流 + 合理回报<br>• 融资方：减少股权稀释 + 保持控制权<br>• MIFC：专业风控 + 配资增值<br><br>对于绿能科技项目，初步建议分成比例8-10%，期限5年。'
+                            }
+                        ]
+                    },
+                    {
+                        title: '第4幕：方案制定',
+                        description: '使用工具生成收入分成方案',
+                        dialogue: [
+                            {
+                                type: 'ai',
+                                content: '现在让我们使用专业工具为您制定个性化的投资方案：<br><br>🧮 <strong>融资计算器</strong>：<br>请告诉我您的投资意向：<br>• 计划投资金额：___万元<br>• 期望年化回报率：___%<br>• 可接受的投资期限：___年<br><br>📋 <strong>可选工具</strong>：<br>• 💹 投资收益预测模型<br>• 📊 同业案例对比分析<br>• 📝 投资意向书生成器<br>• ⚖️ 风险评估报告<br><br>我将根据您的偏好生成最优的收入分成方案！'
+                            },
+                            {
+                                type: 'user',
+                                content: '我计划投资2000万，期望年化回报15%，投资期限5年。'
+                            },
+                            {
+                                type: 'ai',
+                                content: '🎯 <strong>个性化投资方案</strong>：<br><br>💰 <strong>投资结构</strong>：<br>• 您的投资：2000万人民币<br>• MIFC配资：4000万人民币（1:2配资）<br>• 总投资规模：6000万人民币<br><br>📈 <strong>收益设计</strong>：<br>• 分成比例：营收的9%<br>• 预计年分成：720万（基于8000万营收）<br>• 年化回报率：18%（超出预期）<br>• 投资期限：5年<br>• 累计回收：约4500万（含本金）<br><br>🛡️ <strong>保障机制</strong>：<br>• 最低回报保障：年化12%<br>• 提前退出权：第3年起可协商退出<br>• 追加投资权：后续轮次优先参与权'
+                            }
+                        ]
+                    },
+                    {
+                        title: '第5幕：KYC与提交',
+                        description: '完成KYC流程，提交投资方案',
+                        dialogue: [
+                            {
+                                type: 'ai',
+                                content: '方案确认后，我们需要完成投资者适当性评估（KYC）：<br><br>📋 <strong>KYC材料清单</strong>：<br>• 🆔 身份证明：身份证/护照扫描件<br>• 💼 资产证明：银行流水、资产评估报告<br>• 📈 投资经验：过往投资经历证明<br>• 🏢 机构资质：营业执照（如为机构投资）<br><br>🔍 <strong>风险评估</strong>：<br>• 风险承受能力测试<br>• 投资经验评估<br>• 资金来源合规确认<br><br>⏱️ <strong>流程时间</strong>：KYC审核通常需要1-2个工作日，我会全程协助您完成所有手续。'
+                            },
+                            {
+                                type: 'user',
+                                content: '我已经准备好所有材料，风险承受能力为积极型投资者。'
+                            },
+                            {
+                                type: 'ai',
+                                content: '✅ <strong>KYC审核完成</strong>！<br><br>📋 <strong>最终确认</strong>：<br>• 投资者类型：合格的积极型投资者<br>• 投资方案：2000万投资，配资4000万<br>• 收入分成：9%，期限5年<br>• 预计回报：年化18%<br><br>📄 <strong>提交材料</strong>：<br>• ✅ 投资意向书已生成<br>• ✅ 风险评估报告已完成<br>• ✅ KYC材料已审核通过<br>• ✅ 收入分成协议草案已准备<br><br>🚀 <strong>下一步</strong>：方案将提交给MIFC审核团队，预计3个工作日内给出审核结果。审核期间您可以随时联系我了解进展！'
+                            }
+                        ]
+                    }
+                ]
+            },
+            scenario3: {
+                acts: [
+                    {
+                        title: '第1幕：方案审核',
+                        description: 'MIFC专业团队审核投资方案',
+                        dialogue: [
+                            {
+                                type: 'ai',
+                                content: '您好！我是MIFC的专业审核顾问。我们已收到王先生对绿能科技项目的投资方案，现在开始全面的专业评估：<br><br>📋 <strong>审核维度</strong>：<br>• 💰 财务健康度（权重25%）：现金流、盈利能力、负债结构<br>• 🔬 技术先进性（权重20%）：专利价值、技术壁垒、研发实力<br>• 📈 市场前景（权重20%）：行业趋势、竞争格局、增长空间<br>• 👥 团队能力（权重20%）：管理经验、行业背景、执行力<br>• ⚖️ 风险可控性（权重15%）：行业风险、技术风险、财务风险<br><br>⏱️ <strong>审核进度</strong>：预计72小时内完成全部评估工作。'
+                            },
+                            {
+                                type: 'user',
+                                content: '审核的具体标准和流程是什么？'
+                            },
+                            {
+                                type: 'ai',
+                                content: '📊 <strong>MIFC审核标准</strong>：<br><br>🎯 <strong>评分体系</strong>：<br>• 90-100分：优秀项目，快速通道<br>• 80-89分：良好项目，标准流程<br>• 70-79分：合格项目，需要条件<br>• 60-69分：有风险，需要调整<br>• 60分以下：不予通过<br><br>🔍 <strong>审核流程</strong>：<br>1. 初步筛选：基础条件和负面清单检查<br>2. 财务分析：三年财务数据深度分析<br>3. 技术评估：专利技术和研发能力评估<br>4. 市场调研：行业地位和竞争优势确认<br>5. 风控评估：多维度风险识别和量化<br>6. 最终决策：审核委员会投票决定<br><br>我们的通过率约为65%，标准严格但公正。'
+                            }
+                        ]
+                    },
+                    {
+                        title: '第2幕：审核结果',
+                        description: '审核结果反馈，通过或不通过',
+                        dialogue: [
+                            {
+                                type: 'ai',
+                                content: '🎉 <strong>审核结果：通过！</strong><br><br>📊 <strong>评估详情</strong>：<br>• 综合评分：<span style="color: #10b981; font-weight: bold;">86分</span>（良好级别）<br>• 财务健康度：88分 ✅<br>• 技术先进性：90分 ✅<br>• 市场前景：85分 ✅<br>• 团队能力：84分 ✅<br>• 风险可控性：83分 ✅<br><br>💡 <strong>审核意见</strong>：<br>"绿能科技在固态电池技术领域具有明显优势，团队实力雄厚，财务状况健康。新能源电池市场前景广阔，该项目具有良好的投资价值。建议批准投资方案。"<br><br>✅ <strong>批准条件</strong>：按原方案执行，无需调整。'
+                            },
+                            {
+                                type: 'user',
+                                content: '太好了！下一步需要做什么？'
+                            },
+                            {
+                                type: 'ai',
+                                content: '🚀 <strong>投资执行流程</strong>：<br><br>📝 <strong>即将开始</strong>：<br>1. 合同签署：正式投资协议和收入分成协议<br>2. 资金监管：投资资金进入第三方监管账户<br>3. 法务确认：股权变更和相关法务手续<br>4. 资金划转：监管资金释放到企业账户<br>5. 投后管理：定期监控和收入分成执行<br><br>⏱️ <strong>时间安排</strong>：<br>• 合同签署：3个工作日内<br>• 资金到账：签署后5个工作日<br>• 首次分成：下个季度开始<br><br>🎯 <strong>预期收益</strong>：基于当前营收水平，首年预计分成收益约720万元！'
+                            }
+                        ]
+                    },
+                    {
+                        title: '第3幕：执行完成',
+                        description: '投资成功执行或需要调整方案',
+                        dialogue: [
+                            {
+                                type: 'ai',
+                                content: '🎉 <strong>投资执行成功！</strong><br><br>✅ <strong>完成事项</strong>：<br>• 📄 投资协议已正式签署<br>• 💰 2000万投资资金已到账<br>• 🏦 MIFC配资4000万已到位<br>• 📊 股权变更手续已完成<br>• 🔒 收入分成协议已生效<br><br>📈 <strong>投资详情</strong>：<br>• 总投资：6000万人民币<br>• 持股比例：12%（王先生8% + MIFC 4%）<br>• 分成权利：营收9%，期限5年<br>• 董事会席位：1席（王先生代表）<br><br>📱 <strong>后续服务</strong>：<br>• 季度财务报告<br>• 年度股东大会<br>• 重大事项决策参与<br>• 收入分成按季度支付<br><br>恭喜您成为绿能科技的投资伙伴！期待与您一起见证企业的成长！'
+                            }
+                        ]
+                    }
+                ]
+            }
+        };
+
+        // 全局变量
+        let currentScenario = 1;
+        let currentAct = 0;
+        let currentMessageIndex = 0;
+        let isTyping = false;
+
+        // DOM元素
+        const messagesContainer = document.getElementById('messagesContainer');
+        const messageInput = document.getElementById('messageInput');
+        const sendButton = document.getElementById('sendButton');
+        const currentScenarioText = document.getElementById('currentScenario');
+        const scenarioSelect = document.getElementById('scenarioSelect');
+        const actButtons = document.getElementById('actButtons');
+        const actTitle = document.getElementById('actTitle');
+        const actDescription = document.getElementById('actDescription');
+        const actProgress = document.getElementById('actProgress');
+
+        // 初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            generateActButtons();
+            loadAct();
+            bindEvents();
+        });
+
+        // 绑定事件
+        function bindEvents() {
+            // 场景选择
+            scenarioSelect.addEventListener('change', function() {
+                const scenario = parseInt(this.value);
+                switchScenario(scenario);
+            });
+
+            // 发送消息
+            sendButton.addEventListener('click', sendMessage);
+            messageInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    sendMessage();
+                }
+            });
+
+            // 重置演示
+            document.getElementById('resetDemo').addEventListener('click', resetDemo);
+            
+            // 导出报告
+            document.getElementById('exportData').addEventListener('click', exportReport);
+        }
+
+        // 生成戏幕按钮
+        function generateActButtons() {
+            const scenario = roadshowScripts[`scenario${currentScenario}`];
+            actButtons.innerHTML = '';
+            
+            scenario.acts.forEach((act, index) => {
+                const button = document.createElement('button');
+                button.className = `act-btn w-full text-left p-3 rounded-lg glass-panel hover:bg-blue-600/20 transition-all ${index === currentAct ? 'bg-blue-600/30 border border-blue-400' : ''}`;
+                button.dataset.act = index;
+                button.innerHTML = `
+                    <p class="font-medium text-sm">${act.title}</p>
+                    <p class="text-xs text-gray-300">${act.description}</p>
+                `;
+                
+                button.addEventListener('click', function() {
+                    switchAct(parseInt(this.dataset.act));
+                });
+                
+                actButtons.appendChild(button);
+            });
+        }
+
+        // 切换场景
+        function switchScenario(scenario) {
+            currentScenario = scenario;
+            currentAct = 0;
+            currentMessageIndex = 0;
+            
+            updateScenarioDisplay();
+            generateActButtons();
+            loadAct();
+        }
+
+        // 切换戏幕
+        function switchAct(act) {
+            currentAct = act;
+            currentMessageIndex = 0;
+            
+            // 更新按钮状态
+            document.querySelectorAll('.act-btn').forEach((btn, index) => {
+                if (index === act) {
+                    btn.className = 'act-btn w-full text-left p-3 rounded-lg glass-panel bg-blue-600/30 border border-blue-400 transition-all';
+                } else {
+                    btn.className = 'act-btn w-full text-left p-3 rounded-lg glass-panel hover:bg-blue-600/20 transition-all';
+                }
+            });
+            
+            loadAct();
+        }
+
+        // 更新场景显示
+        function updateScenarioDisplay() {
+            const scenarioNames = {
+                1: '场景1 - 融资方接触',
+                2: '场景2 - 投资伙伴参与', 
+                3: '场景3 - MIFC审核'
+            };
+            currentScenarioText.textContent = `当前：${scenarioNames[currentScenario]}`;
+            scenarioSelect.value = currentScenario;
+        }
+
+        // 加载戏幕
+        function loadAct() {
+            clearMessages();
+            currentMessageIndex = 0;
+            
+            const scenario = roadshowScripts[`scenario${currentScenario}`];
+            const act = scenario.acts[currentAct];
+            
+            if (act) {
+                // 更新戏幕信息
+                actTitle.textContent = act.title;
+                actDescription.textContent = act.description;
+                
+                // 更新进度条
+                const progress = ((currentAct + 1) / scenario.acts.length) * 100;
+                actProgress.style.width = `${progress}%`;
+                
+                setTimeout(() => {
+                    playNextMessage();
+                }, 500);
+            } else {
+                addMessage('ai', '当前戏幕暂无对话内容。');
+            }
+        }
+
+        // 播放下一条消息
+        function playNextMessage() {
+            const scenario = roadshowScripts[`scenario${currentScenario}`];
+            const act = scenario.acts[currentAct];
+            
+            if (!act || !act.dialogue || currentMessageIndex >= act.dialogue.length) {
+                return;
+            }
+
+            const message = act.dialogue[currentMessageIndex];
+            
+            if (message.type === 'ai') {
+                addTypingIndicator();
+                setTimeout(() => {
+                    removeTypingIndicator();
+                    addMessage('ai', message.content);
+                    currentMessageIndex++;
+                    setTimeout(() => {
+                        playNextMessage();
+                    }, 2000);
+                }, 1500);
+            } else {
+                addMessage('user', message.content);
+                currentMessageIndex++;
+                setTimeout(() => {
+                    playNextMessage();
+                }, 1000);
+            }
+        }
+
+        // 添加消息
+        function addMessage(type, content) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'flex items-start space-x-3';
+            
+            if (type === 'ai') {
+                messageDiv.innerHTML = `
+                    <div class="w-8 h-8 ai-message rounded-full flex items-center justify-center">
+                        <i class="fas fa-robot text-white text-sm"></i>
+                    </div>
+                    <div class="ai-message rounded-lg rounded-tl-none p-3 max-w-md">
+                        <p class="text-white">${content}</p>
+                    </div>
+                `;
+            } else {
+                messageDiv.className += ' justify-end';
+                messageDiv.innerHTML = `
+                    <div class="user-message rounded-lg rounded-tr-none p-3 max-w-md">
+                        <p class="text-white">${content}</p>
+                    </div>
+                    <div class="w-8 h-8 user-message rounded-full flex items-center justify-center">
+                        <i class="fas fa-user text-white text-sm"></i>
+                    </div>
+                `;
+            }
+            
+            messagesContainer.appendChild(messageDiv);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
+        // 添加输入指示器
+        function addTypingIndicator() {
+            if (isTyping) return;
+            
+            isTyping = true;
+            const typingDiv = document.createElement('div');
+            typingDiv.id = 'typing-indicator';
+            typingDiv.className = 'flex items-start space-x-3';
+            typingDiv.innerHTML = `
+                <div class="w-8 h-8 ai-message rounded-full flex items-center justify-center">
+                    <i class="fas fa-robot text-white text-sm"></i>
+                </div>
+                <div class="ai-message rounded-lg rounded-tl-none p-3">
+                    <div class="typing-indicator">
+                        <span class="text-white">正在输入...</span>
+                    </div>
+                </div>
+            `;
+            
+            messagesContainer.appendChild(typingDiv);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
+        // 移除输入指示器
+        function removeTypingIndicator() {
+            const typingIndicator = document.getElementById('typing-indicator');
+            if (typingIndicator) {
+                typingIndicator.remove();
+            }
+            isTyping = false;
+        }
+
+        // 发送消息
+        function sendMessage() {
+            const message = messageInput.value.trim();
+            if (!message) return;
+            
+            addMessage('user', message);
+            messageInput.value = '';
+            
+            // 模拟AI回复
+            addTypingIndicator();
+            setTimeout(() => {
+                removeTypingIndicator();
+                const aiResponse = generateAIResponse(message);
+                addMessage('ai', aiResponse);
+            }, 1500);
+        }
+
+        // 生成AI回复
+        function generateAIResponse(userMessage) {
+            const responses = {
+                '收入分成': '收入分成模式是我们的核心创新，投资方可以获得企业未来收入的固定比例分成，风险更低，回报更稳定。',
+                'MIFC': 'MIFC是香港注册的专业投资基金联盟，管理资金超过500亿港币，专注于成长型企业投资。',
+                '滴灌通': '滴灌通是完整的投资生态平台，连接融资方、投资伙伴和MIFC，提供全流程投资服务。',
+                '风险': '我们采用严格的风控体系，包括财务审核、技术评估、市场分析等多维度评估，确保投资安全。'
+            };
+            
+            for (let key in responses) {
+                if (userMessage.includes(key)) {
+                    return responses[key];
+                }
+            }
+            
+            return '感谢您的提问！我会根据您的具体需求提供详细解答。您还想了解哪方面的信息？';
+        }
+
+        // 清空消息
+        function clearMessages() {
+            messagesContainer.innerHTML = '';
+        }
+
+        // 重置演示
+        function resetDemo() {
+            currentScenario = 1;
+            currentAct = 0;
+            currentMessageIndex = 0;
+            
+            updateScenarioDisplay();
+            generateActButtons();
+            loadAct();
+        }
+
+        // 导出报告
+        function exportReport() {
+            const reportData = {
+                timestamp: new Date().toISOString(),
+                scenario: currentScenario,
+                act: currentAct,
+                actTitle: actTitle.textContent,
+                messages: Array.from(messagesContainer.children).map(msg => msg.textContent)
+            };
+            
+            const blob = new Blob([JSON.stringify(reportData, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `MIFC路演报告_${new Date().toISOString().split('T')[0]}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+    </script>
+</body>
+</html> 
