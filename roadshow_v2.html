@@ -1,0 +1,1524 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MIFC路演 - AI Agent交互系统</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        
+        body { 
+            font-family: 'Inter', sans-serif; 
+            overflow: hidden; /* 禁止全局滚动 */
+            height: 100vh; /* 确保body高度为视口高度 */
+        }
+        
+        .gradient-bg {
+            background: linear-gradient(135deg, #0c1425 0%, #1a2332 50%, #0f1419 100%);
+        }
+        
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .ai-message {
+            background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+        }
+        
+        .user-message {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        }
+        
+        .neon-border {
+            box-shadow: 0 0 20px rgba(59, 130, 246, 0.3);
+            border: 1px solid rgba(59, 130, 246, 0.5);
+        }
+        
+        .typing-indicator {
+            animation: pulse 1.5s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 0.6; }
+            50% { opacity: 1; }
+            100% { opacity: 0.6; }
+        }
+        
+        .role-card {
+            transition: all 0.3s ease;
+        }
+        
+        .role-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(59, 130, 246, 0.15);
+        }
+        
+        .role-card.active {
+            background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+        }
+        
+        .scenario-progress {
+            background: linear-gradient(90deg, #3b82f6 0%, #10b981 50%, #f59e0b 100%);
+        }
+        
+        .case-card {
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(16, 185, 129, 0.1) 100%);
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            transition: all 0.3s ease;
+        }
+        
+        .case-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(59, 130, 246, 0.2);
+        }
+        
+        .product-highlight {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            animation: glow 2s ease-in-out infinite alternate;
+        }
+        
+        @keyframes glow {
+            from { box-shadow: 0 0 20px rgba(102, 126, 234, 0.3); }
+            to { box-shadow: 0 0 30px rgba(118, 75, 162, 0.5); }
+        }
+        
+        .success-story {
+            background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+            color: #1f2937;
+        }
+        
+        .financing-flow {
+            background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);
+            color: #1f2937;
+        }
+        
+        .industry-example {
+            background: linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 100%);
+            color: #1e293b;
+            border: 2px solid #6366f1;
+        }
+        
+        .option-button {
+            background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+            transition: all 0.3s ease;
+            border: 1px solid rgba(59, 130, 246, 0.3);
+        }
+        
+        .option-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(59, 130, 246, 0.4);
+            background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
+        }
+        
+        .slogan-banner {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            box-shadow: 0 20px 40px rgba(102, 126, 234, 0.3);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .industry-tag {
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        
+        .industry-tag:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+        }
+        
+        .industry-tag:active {
+            transform: translateY(0);
+        }
+        
+        /* Agent相关样式 */
+        .agent-central { background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); }
+        .agent-product { background: linear-gradient(135deg, #10b981 0%, #059669 100%); }
+        .agent-case { background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); }
+        .agent-finance { background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%); }
+        .agent-industry { background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%); }
+        .agent-risk { background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%); }
+        
+        .agent-mention {
+            background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+            color: white;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 0.9em;
+            margin-right: 8px;
+            display: inline-block;
+            animation: mentionGlow 2s ease-in-out infinite alternate;
+        }
+        
+        @keyframes mentionGlow {
+            from { box-shadow: 0 0 5px rgba(59, 130, 246, 0.3); }
+            to { box-shadow: 0 0 15px rgba(59, 130, 246, 0.6); }
+        }
+        
+        .coordination-message {
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(16, 185, 129, 0.1) 100%);
+            border: 1px dashed rgba(59, 130, 246, 0.3);
+            font-style: italic;
+            opacity: 0.9;
+        }
+        
+        .agent-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: bold;
+            color: white;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .agent-name {
+            font-size: 0.75rem;
+            color: #94a3b8;
+            margin-top: 2px;
+        }
+        
+        .coordination-indicator {
+            animation: coordinationPulse 1.5s infinite;
+        }
+        
+        @keyframes coordinationPulse {
+            0% { opacity: 0.5; }
+            50% { opacity: 1; }
+            100% { opacity: 0.5; }
+        }
+    </style>
+</head>
+<body class="gradient-bg min-h-screen text-white">
+    <div class="container mx-auto p-4 h-screen flex flex-col max-h-screen">
+        <!-- Header -->
+        <header class="glass-panel rounded-lg p-4 mb-4 flex justify-between items-center">
+            <div class="flex items-center space-x-4">
+                <div class="w-12 h-12 bg-gradient-to-r from-blue-500 to-cyan-400 rounded-lg flex items-center justify-center">
+                    <i class="fas fa-chart-line text-white text-xl"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold">香港21章投资公司 (MIFC)</h1>
+                    <p class="text-blue-200 text-sm">AI智能路演系统</p>
+                </div>
+            </div>
+            <div class="flex items-center space-x-4">
+                <div class="text-right">
+                    <p class="text-sm text-gray-300">滴灌通投资生态</p>
+                    <p class="text-xs text-blue-200">创新收入分成模式</p>
+                </div>
+                <div class="w-3 h-3 bg-green-400 rounded-full"></div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <div class="flex-1 flex gap-4 min-h-0">
+            <!-- Chat Area -->
+            <div class="flex-1 flex flex-col min-h-0">
+                <!-- Chat Messages -->
+                <div id="chatContainer" class="flex-1 glass-panel rounded-lg p-4 mb-4 overflow-y-auto min-h-0">
+                    <div id="messagesContainer" class="space-y-4">
+                        <!-- Messages will be generated dynamically -->
+                    </div>
+                </div>
+
+                <!-- Chat Input - 固定在底部 -->
+                <div class="glass-panel rounded-lg p-4 flex-shrink-0">
+                    <div class="flex space-x-3">
+                        <input 
+                            id="messageInput" 
+                            type="text" 
+                            placeholder="输入您的问题..." 
+                            class="flex-1 bg-gray-800 border border-gray-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-blue-400"
+                        >
+                        <button 
+                            id="sendButton" 
+                            class="bg-gradient-to-r from-blue-500 to-cyan-400 hover:from-blue-600 hover:to-cyan-500 px-6 py-2 rounded-lg font-medium transition-all"
+                        >
+                            <i class="fas fa-paper-plane"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Panel -->
+            <div class="w-80 space-y-4 flex-shrink-0 overflow-y-auto">
+                <!-- Scenario Progress -->
+                <div class="glass-panel rounded-lg p-4">
+                    <h3 class="text-lg font-semibold mb-3">路演进度</h3>
+                    <div class="space-y-3">
+                        <div class="scenario-progress h-2 rounded-full"></div>
+                        <div class="flex justify-between text-xs text-gray-300">
+                            <span>场景1</span>
+                            <span>场景2</span>
+                            <span>场景3</span>
+                        </div>
+                        <div id="currentScenario" class="text-center text-blue-300 font-medium">
+                            当前：场景1 - 融资方接触
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Current Act Info -->
+                <div class="glass-panel rounded-lg p-4">
+                    <h3 class="text-lg font-semibold mb-3">当前戏幕</h3>
+                    <div id="currentActInfo" class="space-y-2">
+                        <div class="text-sm text-blue-300 font-medium" id="actTitle">第一幕：介绍MIFC和案例</div>
+                        <div class="text-xs text-gray-300" id="actDescription">AI Agent介绍MIFC，展示Slogan，举例收入分成模式，提供三个引导问题</div>
+                        <div class="w-full bg-gray-700 rounded-full h-2 mt-2">
+                            <div id="actProgress" class="bg-gradient-to-r from-blue-500 to-cyan-400 h-2 rounded-full transition-all duration-500" style="width: 50%"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Act Selection -->
+                <div class="glass-panel rounded-lg p-4">
+                    <h3 class="text-lg font-semibold mb-3">戏幕控制</h3>
+                    <div class="mb-3">
+                        <select id="scenarioSelect" class="w-full bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-blue-400">
+                            <option value="1">场景1：融资方接触</option>
+                            <option value="2">场景2：投资伙伴参与</option>
+                            <option value="3">场景3：MIFC审核</option>
+                        </select>
+                    </div>
+                    <div id="actButtons" class="space-y-2">
+                        <!-- Act buttons will be generated dynamically -->
+                    </div>
+                </div>
+
+                <!-- Quick Actions -->
+                <div class="glass-panel rounded-lg p-4">
+                    <h3 class="text-lg font-semibold mb-3">快速操作</h3>
+                    <div class="space-y-2">
+                        <button id="resetDemo" class="w-full bg-gray-700 hover:bg-gray-600 rounded-lg p-2 text-sm transition-all">
+                            <i class="fas fa-refresh mr-2"></i>重置演示
+                        </button>
+                        <button id="exportData" class="w-full bg-blue-700 hover:bg-blue-600 rounded-lg p-2 text-sm transition-all">
+                            <i class="fas fa-download mr-2"></i>导出报告
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Agent配置 - 多Agent协作系统
+        const agentConfig = {
+            'central': {
+                name: 'MIFC-Central',
+                displayName: 'Mr.Connect',
+                avatar: '🎯',
+                specialty: '整体协调与流程管理',
+                className: 'agent-central'
+            },
+            'product': {
+                name: 'ProductMaster',
+                displayName: '产品专家',
+                avatar: '💼',
+                specialty: '产品介绍与方案设计',
+                className: 'agent-product'
+            },
+            'case': {
+                name: 'CaseAnalyst',
+                displayName: '案例分析师',
+                avatar: '📊',
+                specialty: '成功案例分析与展示',
+                className: 'agent-case'
+            },
+            'finance': {
+                name: 'FinanceDesigner',
+                displayName: '融资设计师',
+                avatar: '💰',
+                specialty: '融资方案设计与优化',
+                className: 'agent-finance'
+            },
+            'industry': {
+                name: 'IndustryExpert',
+                displayName: '行业专家',
+                avatar: '🏭',
+                specialty: '行业分析与匹配',
+                className: 'agent-industry'
+            },
+            'risk': {
+                name: 'RiskAssessor',
+                displayName: '风控评估师',
+                avatar: '🛡️',
+                specialty: '风险评估与控制',
+                className: 'agent-risk'
+            }
+        };
+
+        // 路演脚本数据 - 严格按照roadshow.md场景1要求组织
+        const roadshowScripts = {
+            scenario1: {
+                acts: [
+                    {
+                        title: '第一幕：介绍MIFC和案例',
+                        description: 'AI Agent介绍MIFC，展示Slogan大图，举收入分成例子，提供三个提示问题',
+                        dialogue: [
+                            {
+                                type: 'ai',
+                                agentType: 'central',
+                                content: '欢迎来到滴灌通投资生态！我是MIFC-Mr.Connect。<br><br><div class="text-center my-8"><div class="bg-gradient-to-r from-blue-600 to-cyan-500 rounded-xl p-8 text-white shadow-2xl"><h1 class="text-3xl font-bold mb-4">🌍 MIFC 使命宣言</h1><p class="text-2xl font-semibold bg-white/20 rounded-lg p-4">将国际资本引到中小微企业</p></div></div><br>现在我来协调我们的专业团队为您提供服务。'
+                            },
+                            {
+                                type: 'coordination',
+                                agentType: 'central',
+                                targetAgent: 'product',
+                                task: '请为用户介绍我们的创新融资模式和收入分成投资体系'
+                            },
+                            {
+                                type: 'ai',
+                                agentType: 'product',
+                                content: '很高兴为您介绍我们的创新融资模式 - <strong>收入分成投资</strong>：<br><br>📊 <strong>收入分成案例</strong><br>• 💰 融资需求：500万元<br>• 🤝 投资伙伴：投资300万元<br>• 🏦 MIFC配资：700万元（1:2.3配资）<br>• 📈 收入分成：按营收8%分成，5年期<br>• 💵 实际回报：年化收益率18%<br><br>这种模式的优势在于风险共担、收益共享，为中小微企业提供了全新的融资路径。'
+                            },
+                            {
+                                type: 'ai',
+                                agentType: 'central',
+                                content: '现在，请选择您最感兴趣的问题：',
+                                showOptions: true,
+                                options: [
+                                    '我要怎么才能拿到钱？',
+                                    '再给我举个更详细一点的例子吧',
+                                    '给我一个真实的案例看看吧'
+                                ]
+                            }
+                        ]
+                    },
+                    {
+                        title: '第二幕：如何寻找合作伙伴',
+                        description: 'AI Agent根据融资方信息生成融资故事，提供自定义融资故事能力',
+                        dialogue: []
+                    }
+                ]
+            },
+            scenario2: {
+                acts: [
+                    {
+                        title: '第一幕：项目展示',
+                        description: '投资伙伴进入，AI展示融资方故事及详细项目数据',
+                        dialogue: [
+                            {
+                                type: 'ai',
+                                agentType: 'central',
+                                content: '王先生，欢迎了解绿能科技的投资机会！通过融资方分享的链接，您已经成功进入我们的投资评估系统。<br><br>我是MIFC-Mr.Connect，现在为您展示完整的项目信息。'
+                            },
+                            {
+                                type: 'coordination',
+                                agentType: 'central',
+                                targetAgent: 'case',
+                                task: '请为投资伙伴详细展示融资方的项目故事和核心数据'
+                            },
+                            {
+                                type: 'ai',
+                                agentType: 'case',
+                                content: '📊 <strong>融资方故事</strong>：<br><br><div class="case-card rounded-xl p-6 mb-4 shadow-lg"><h3 class="text-xl font-bold text-yellow-400 mb-3">🔋 绿能电池科技有限公司</h3><div class="grid grid-cols-1 md:grid-cols-2 gap-4"><div class="success-story rounded-lg p-4"><h4 class="font-bold mb-2">💡 投资机会</h4><p class="text-sm">新能源固态锂电池技术处于行业领先地位，市场需求爆发式增长，预计3年内市场规模达到2000亿</p></div><div class="financing-flow rounded-lg p-4"><h4 class="font-bold mb-2">🎯 核心优势</h4><ul class="text-sm space-y-1"><li>• 15项发明专利，技术壁垒高</li><li>• 与比亚迪、宁德时代建立合作</li><li>• 产品安全性提升40%</li></ul></div><div class="industry-example rounded-lg p-4"><h4 class="font-bold mb-2">📈 财务表现</h4><ul class="text-sm space-y-1"><li>• 年营收：8000万元</li><li>• 增长率：35%</li><li>• 毛利率：42%</li><li>• 净利率：18%</li></ul></div><div class="success-story rounded-lg p-4"><h4 class="font-bold mb-2">💰 融资需求</h4><p class="text-sm">1.5亿人民币用于产能扩张，预计18个月内产能提升300%，年营收突破3亿</p></div></div></div>'
+                            }
+                        ]
+                    },
+                    {
+                        title: '第二幕：互动问答',
+                        description: '投资伙伴通过AI互动了解详细信息，AI推荐投资案例',
+                        dialogue: [
+                            {
+                                type: 'ai',
+                                agentType: 'central',
+                                content: '现在您可以向我提问任何关于项目的问题，我会协调专业团队为您详细解答：<br><br>🔍 <strong>您可以了解的信息</strong>：<br>• 📋 融资方详细信息<br>• 🏭 行业分析和研报<br>• 💼 MIFC服务详情<br>• 📊 同类投资案例<br>• ⚖️ 风险评估报告<br><br>请告诉我您最关心的问题，或者我可以先为您推荐一些成功的投资案例。'
+                            },
+                            {
+                                type: 'coordination',
+                                agentType: 'central',
+                                targetAgent: 'case',
+                                task: '请为投资伙伴展示收入分成合约的关键参数和成功案例'
+                            },
+                            {
+                                type: 'ai',
+                                agentType: 'case',
+                                content: '让我为您推荐几个成功的收入分成投资案例，重点展示关键参数：<br><br><div class="product-highlight rounded-xl p-6 text-white mb-6 shadow-2xl"><h3 class="text-2xl font-bold mb-3">📈 收入分成投资案例</h3><p class="text-lg opacity-90">成功案例与关键参数分析</p></div><div class="case-card rounded-xl p-6 mb-4 shadow-lg"><h4 class="text-xl font-bold mb-4 text-yellow-400">🎯 案例一：医疗器械公司</h4><div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4"><div class="success-story rounded-lg p-4"><h5 class="font-bold mb-2">💰 投资参数</h5><ul class="text-sm space-y-1"><li>• 投资金额：2000万</li><li>• MIFC配资：3000万</li><li>• 收入分成：12%</li><li>• 联营周期：5年</li></ul></div><div class="financing-flow rounded-lg p-4"><h5 class="font-bold mb-2">📊 实际收益</h5><ul class="text-sm space-y-1"><li>• 年化收益率：25%</li><li>• 累计分成：3200万</li><li>• 投资回报倍数：1.6倍</li><li>• 回收周期：3.2年</li></ul></div></div></div><div class="case-card rounded-xl p-6 mb-4 shadow-lg"><h4 class="text-xl font-bold mb-4 text-yellow-400">🎯 案例二：连锁餐饮品牌</h4><div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4"><div class="success-story rounded-lg p-4"><h5 class="font-bold mb-2">💰 投资参数</h5><ul class="text-sm space-y-1"><li>• 投资金额：800万</li><li>• MIFC配资：1200万</li><li>• 收入分成：10%</li><li>• 联营周期：6年</li></ul></div><div class="financing-flow rounded-lg p-4"><h5 class="font-bold mb-2">📊 实际收益</h5><ul class="text-sm space-y-1"><li>• 年化收益率：22%</li><li>• 累计分成：1650万</li><li>• 投资回报倍数：2.06倍</li><li>• 回收周期：3.8年</li></ul></div></div></div><p class="text-center text-lg font-semibold text-green-400 mb-2">💡 关键成功因素</p><p class="text-blue-300 text-center">选择优质项目 + 合理参数设置 + MIFC专业配资 = 稳健投资收益</p>'
+                            }
+                        ]
+                    },
+                    {
+                        title: '第三幕：方案生成',
+                        description: '生成收入分成方案，完成KYC流程，提交MIFC审核',
+                        dialogue: [
+                            {
+                                type: 'ai',
+                                agentType: 'central',
+                                content: '基于您的了解，现在让我协调专业团队为您生成定制的《收入分成方案》。'
+                            },
+                            {
+                                type: 'coordination',
+                                agentType: 'central',
+                                targetAgent: 'finance',
+                                task: '请使用融资计算器和同业案例，为投资伙伴生成收入分成方案'
+                            },
+                            {
+                                type: 'ai',
+                                agentType: 'finance',
+                                content: '我来为您生成专业的《收入分成方案》：<br><br><div class="product-highlight rounded-xl p-6 text-white mb-6 shadow-2xl"><h3 class="text-2xl font-bold mb-3">📋 收入分成方案</h3><p class="text-lg opacity-90">绿能电池科技投资方案</p></div><div class="case-card rounded-xl p-6 mb-4 shadow-lg"><h4 class="text-xl font-bold mb-4 text-yellow-400">💰 方案核心参数</h4><div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4"><div class="success-story rounded-lg p-4"><h5 class="font-bold mb-2">📊 投资结构</h5><ul class="text-sm space-y-1"><li>• 您的投资金额：3000万元</li><li>• MIFC配资金额：4500万元</li><li>• 配资比例：1:1.5</li><li>• 总投资规模：7500万元</li></ul></div><div class="financing-flow rounded-lg p-4"><h5 class="font-bold mb-2">🎯 收益参数</h5><ul class="text-sm space-y-1"><li>• 收入分成比例：11%</li><li>• 联营周期：5年</li><li>• 预计年化收益：23%</li><li>• 预计总收益：4600万</li></ul></div><div class="industry-example rounded-lg p-4"><h5 class="font-bold mb-2">🛡️ 风险控制</h5><ul class="text-sm space-y-1"><li>• 保底收益：年化15%</li><li>• 业绩对赌：营收增长≥30%</li><li>• 提前退出：3年后可申请</li><li>• 担保措施：股权质押+资产抵押</li></ul></div><div class="success-story rounded-lg p-4"><h5 class="font-bold mb-2">📈 投资工具</h5><ul class="text-sm space-y-1"><li>• 融资计算器：实时收益测算</li><li>• 同业案例：参考标杆数据</li><li>• 投资意向书：标准化文件</li><li>• 投资协议：法律保障</li></ul></div></div></div><div class="bg-blue-600/20 rounded-xl p-6 border border-blue-400/30 mb-6"><h4 class="text-xl font-bold mb-4 text-blue-300">🤝 下一步流程</h4><ol class="text-sm text-gray-300 space-y-2"><li>1. 📝 与融资方沟通调整方案细节</li><li>2. ✅ 双方确认最终投资方案</li><li>3. 🔍 完成KYC身份验证流程</li><li>4. 📋 提交方案给MIFC审核</li><li>5. 💰 审核通过后执行投资</li></ol></div>'
+                            },
+                            {
+                                type: 'coordination',
+                                agentType: 'central',
+                                targetAgent: 'risk',
+                                task: '请为投资伙伴提供KYC流程指导和风险提示'
+                            },
+                            {
+                                type: 'ai',
+                                agentType: 'risk',
+                                content: '现在我来指导您完成KYC流程：<br><br><div class="financing-flow rounded-xl p-6 mb-4"><h4 class="text-xl font-bold mb-3">🔍 KYC身份验证流程</h4><div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm"><div><h5 class="font-bold mb-2">📋 个人投资者</h5><ul class="space-y-1"><li>• 身份证明文件</li><li>• 银行流水证明</li><li>• 资产证明文件</li><li>• 投资经验声明</li></ul></div><div><h5 class="font-bold mb-2">🏢 机构投资者</h5><ul class="space-y-1"><li>• 营业执照副本</li><li>• 法人授权书</li><li>• 财务审计报告</li><li>• 投资决策文件</li></ul></div></div></div><div class="case-card rounded-xl p-6 mb-4 shadow-lg"><h4 class="text-xl font-bold mb-4 text-yellow-400">⚠️ 重要风险提示</h4><div class="bg-red-600/20 rounded-lg p-4 border border-red-400/30 mb-4"><ul class="text-sm space-y-2 text-red-200"><li>• 📊 <strong>市场风险</strong>：新能源行业政策变化可能影响收益</li><li>• 💰 <strong>流动性风险</strong>：投资期间资金锁定，提前退出可能有损失</li><li>• 🏭 <strong>经营风险</strong>：企业经营不善可能导致分成收入下降</li><li>• ⚖️ <strong>法律风险</strong>：合同条款变更或争议解决风险</li></ul></div><div class="bg-green-600/20 rounded-lg p-4 border border-green-400/30"><p class="text-sm text-green-200"><strong>💡 风险缓解措施</strong>：MIFC专业风控团队全程监控，多重保障机制确保投资安全</p></div></div><div class="text-center"><p class="text-lg font-semibold text-green-400 mb-2">✅ 准备好提交方案了吗？</p><p class="text-blue-300">完成KYC验证后，我们将立即提交给MIFC进行专业审核</p></div>'
+                            }
+                        ]
+                    }
+                ]
+            },
+            scenario3: {
+                acts: [
+                    {
+                        title: '第1幕：方案审核',
+                        description: 'MIFC专业团队审核投资方案',
+                        dialogue: [
+                            {
+                                type: 'ai',
+                                content: '您好！我是MIFC的专业审核顾问。我们已收到王先生对绿能科技项目的投资方案，现在开始全面的专业评估：<br><br>📋 <strong>审核维度</strong>：<br>• 💰 财务健康度（权重25%）：现金流、盈利能力、负债结构<br>• 🔬 技术先进性（权重20%）：专利价值、技术壁垒、研发实力<br>• 📈 市场前景（权重20%）：行业趋势、竞争格局、增长空间<br>• 👥 团队能力（权重20%）：管理经验、行业背景、执行力<br>• ⚖️ 风险可控性（权重15%）：行业风险、技术风险、财务风险<br><br>⏱️ <strong>审核进度</strong>：预计72小时内完成全部评估工作。'
+                            }
+                        ]
+                    }
+                ]
+            }
+        };
+
+        // 场景1的详细对话流程
+        const scenario1Flows = {
+            option1: { // 我要怎么才能拿到钱？
+                dialogue: [
+                    {
+                        type: 'user',
+                        content: '我要怎么才能拿到钱？'
+                    },
+                    {
+                        type: 'coordination',
+                        agentType: 'central',
+                        targetAgent: 'finance',
+                        task: '请为用户详细介绍资金获取的完整流程和操作步骤'
+                    },
+                    {
+                        type: 'ai',
+                        agentType: 'finance',
+                        content: '很好的问题！让我为您详细介绍获得资金的完整流程：<br><br>💰 <strong>资金获取三步走</strong>：<br><br>🔹 <strong>第一步：找到投资伙伴</strong><br>• 通过您的人脉网络寻找潜在投资者<br>• 可以是个人投资者、机构投资者或产业投资者<br>• 我们会为您生成专业的融资材料<br><br>🔹 <strong>第二步：MIFC配资</strong><br>• 投资伙伴投资后，MIFC按比例配资<br>• 配资比例通常为1:1到1:3<br>• 大幅增加您获得的资金总额<br><br>🔹 <strong>第三步：签约放款</strong><br>• 通过MIFC审核后正式签约<br>• 资金快速到账，通常5-7个工作日<br><br>接下来让我了解您的具体情况，为您匹配最合适的方案！'
+                    },
+                    {
+                        type: 'coordination',
+                        agentType: 'central',
+                        targetAgent: 'industry',
+                        task: '请为用户展示我们重点关注的行业分类，并提供快速选择功能'
+                    },
+                    {
+                        type: 'ai',
+                        agentType: 'industry',
+                        content: '请告诉我您经营的是什么行业？我可以为您推荐相应的产品和案例。<br><br>🏭 <strong>我们重点关注的行业举例</strong>：<br><br><div class="grid grid-cols-2 gap-2 mb-4">' +
+                        '<button onclick="selectIndustry(\'新能源\')" class="industry-tag bg-green-600/20 hover:bg-green-600/40 border border-green-400/30 rounded-lg p-3 text-left transition-all">' +
+                        '<div class="flex items-center"><span class="text-xl mr-2">🔋</span><span class="font-medium">新能源</span></div>' +
+                        '<div class="text-xs text-gray-300 mt-1">锂电池制造、光伏发电、风力发电等</div></button>' +
+                        '<button onclick="selectIndustry(\'医疗健康\')" class="industry-tag bg-blue-600/20 hover:bg-blue-600/40 border border-blue-400/30 rounded-lg p-3 text-left transition-all">' +
+                        '<div class="flex items-center"><span class="text-xl mr-2">💊</span><span class="font-medium">医疗健康</span></div>' +
+                        '<div class="text-xs text-gray-300 mt-1">医疗器械、生物制药、健康管理等</div></button>' +
+                        '<button onclick="selectIndustry(\'智能制造\')" class="industry-tag bg-purple-600/20 hover:bg-purple-600/40 border border-purple-400/30 rounded-lg p-3 text-left transition-all">' +
+                        '<div class="flex items-center"><span class="text-xl mr-2">🤖</span><span class="font-medium">智能制造</span></div>' +
+                        '<div class="text-xs text-gray-300 mt-1">工业机器人、自动化设备、智能工厂等</div></button>' +
+                        '<button onclick="selectIndustry(\'零售消费\')" class="industry-tag bg-orange-600/20 hover:bg-orange-600/40 border border-orange-400/30 rounded-lg p-3 text-left transition-all">' +
+                        '<div class="flex items-center"><span class="text-xl mr-2">🏪</span><span class="font-medium">零售消费</span></div>' +
+                        '<div class="text-xs text-gray-300 mt-1">连锁餐饮、服装品牌、新零售等</div></button>' +
+                        '<button onclick="selectIndustry(\'房地产\')" class="industry-tag bg-yellow-600/20 hover:bg-yellow-600/40 border border-yellow-400/30 rounded-lg p-3 text-left transition-all">' +
+                        '<div class="flex items-center"><span class="text-xl mr-2">🏠</span><span class="font-medium">房地产</span></div>' +
+                        '<div class="text-xs text-gray-300 mt-1">商业地产、住宅开发、物业管理等</div></button>' +
+                        '<button onclick="selectIndustry(\'数字经济\')" class="industry-tag bg-cyan-600/20 hover:bg-cyan-600/40 border border-cyan-400/30 rounded-lg p-3 text-left transition-all">' +
+                        '<div class="flex items-center"><span class="text-xl mr-2">📱</span><span class="font-medium">数字经济</span></div>' +
+                        '<div class="text-xs text-gray-300 mt-1">移动应用、电商平台、数字营销等</div></button>' +
+                        '</div><br><p class="text-sm text-gray-400 mb-3">💡 点击上方行业标签快速选择，或在下方输入框描述您的具体行业：</p>'
+                    }
+                ]
+            },
+            option2: { // 再给我举个更详细一点的例子吧
+                dialogue: [
+                    {
+                        type: 'user',
+                        content: '再给我举个更详细一点的例子吧'
+                    },
+                    {
+                        type: 'coordination',
+                        agentType: 'central',
+                        targetAgent: 'case',
+                        task: '请为用户提供一个详细的连锁餐饮扩张成功案例，包含完整的融资方案和实施结果'
+                    },
+                    {
+                        type: 'ai',
+                        agentType: 'case',
+                        content: '好的！让我为您详细介绍一个真实的成功案例：<br><br><div class="bg-gradient-to-r from-green-600 to-blue-600 rounded-lg p-4 text-white mb-4"><h3 class="text-lg font-bold mb-2">🏪 案例：开店通 - 连锁餐饮扩张</h3></div><br>📋 <strong>项目背景</strong>：<br>• 🍜 公司：某知名火锅连锁品牌<br>• 🎯 目标：3年内开设50家新店<br>• 💰 资金需求：2000万元<br>• 📊 现状：已有15家直营店，月营收600万<br><br>💡 <strong>融资方案</strong>：<br>• 🤝 投资伙伴：餐饮行业投资基金投资800万<br>• 🏦 MIFC配资：1200万（1:1.5配资）<br>• 📈 收入分成：按新店营收10%分成，6年期<br>• 💵 预期回报：年化收益率22%<br><br>🎯 <strong>投资伙伴的价值</strong>：<br>• 🏢 提供选址和装修资源<br>• 👥 引荐优秀的店长和厨师<br>• 📱 协助数字化运营升级<br>• 🔗 对接供应链优质资源<br><br>🏆 <strong>最终结果</strong>：<br>• ✅ 18个月内成功开设30家新店<br>• 📈 整体营收增长280%<br>• 💰 投资方获得稳定分成收益<br>• 🚀 企业成功完成A轮融资<br><br>请告诉我您的行业，我为您推荐最适合的产品方案！'
+                    }
+                ]
+            },
+            option3: { // 给我一个真实的案例看看吧
+                dialogue: [
+                    {
+                        type: 'user',
+                        content: '给我一个真实的案例看看吧'
+                    },
+                    {
+                        type: 'coordination',
+                        agentType: 'central',
+                        targetAgent: 'case',
+                        task: '请为用户展示一个真实的医疗器械公司成功案例，包含详细的项目信息和投资成果'
+                    },
+                    {
+                        type: 'ai',
+                        agentType: 'case',
+                        content: '让我为您展示一个真实的成功案例：<br><br><div class="bg-gradient-to-r from-purple-600 to-pink-600 rounded-lg p-4 text-white mb-4"><h3 class="text-lg font-bold mb-2">🏥 真实案例：医疗器械公司</h3><div class="text-sm opacity-90">项目编号：MIFC-2023-MD-001</div></div><br>🏢 <strong>公司信息</strong>：<br>• 📍 地点：深圳市南山区<br>• 🏭 主营：医疗影像设备研发制造<br>• 👥 团队：85人，其中研发人员60%<br>• 🏆 资质：三类医疗器械生产许可证<br><br>💰 <strong>融资详情</strong>：<br>• 🎯 融资需求：5000万元用于新产品量产<br>• 🤝 投资伙伴：某医疗产业基金投资2000万<br>• 🏦 MIFC配资：3000万（1:1.5配资）<br>• 📊 总投资：5000万元'
+                    },
+                    {
+                        type: 'coordination',
+                        agentType: 'central',
+                        targetAgent: 'risk',
+                        task: '请补充该案例的风险控制措施和投资保障机制'
+                    },
+                    {
+                        type: 'ai',
+                        agentType: 'risk',
+                        content: '📈 <strong>收入分成方案</strong>：<br>• 💵 分成比例：营业收入的12%<br>• ⏰ 分成期限：5年<br>• 🛡️ 保底收益：年化15%<br>• 📊 预期回报：年化25%<br><br>🎯 <strong>投资伙伴带来的价值</strong>：<br>• 🏥 医院渠道资源对接<br>• 📋 产品注册和审批指导<br>• 🔬 技术升级和研发支持<br>• 🌐 国际市场拓展机会<br><br>🏆 <strong>项目成果</strong>（投资18个月后）：<br>• ✅ 新产品成功上市并获得多项认证<br>• 📈 月营收从800万增长到2200万<br>• 💰 投资方已获得分成收益1100万<br>• 🚀 公司估值增长400%<br><br>💡 <strong>关键成功因素</strong>：<br>• 🎯 选择了具有行业资源的投资伙伴<br>• 🤝 投资伙伴深度参与企业运营<br>• 📊 MIFC的专业风控和资金支持<br>• 🔄 定期的投后管理和业绩监控<br><br>您喜欢这种融资方式吗？现在去寻找您的第一位"投资伙伴"吧！'
+                    }
+                ]
+            }
+        };
+
+        // 行业匹配产品 - 包含详细案例卡片（标题、配图、描述）
+        const industryProducts = {
+            '新能源': {
+                product: '绿能通',
+                icon: '🔋',
+                description: '专为新能源企业设计的融资产品',
+                cases: [
+                    {
+                        title: '固态电池技术公司',
+                        image: '🔋',
+                        description: '投资伙伴投资1500万，MIFC配资3000万，18个月内产品成功量产，年化收益20%，投资伙伴提供技术验证和客户资源',
+                        partners: ['新能源产业基金', '汽车制造商', '材料供应商']
+                    }
+                ]
+            },
+            '餐饮': {
+                product: '开店通',
+                icon: '🍜',
+                description: '连锁餐饮扩张专用融资方案',
+                cases: [
+                    {
+                        title: '火锅连锁品牌',
+                        image: '🍜',
+                        description: '投资伙伴投资800万，MIFC配资1200万，成功开设30家新店，投资伙伴提供选址、装修、运营等全方位支持',
+                        partners: ['餐饮投资基金', '商业地产商', '供应链企业']
+                    }
+                ]
+            },
+            '房地产': {
+                product: '地产通',
+                icon: '🏠',
+                description: '房地产开发和运营融资解决方案',
+                cases: [
+                    {
+                        title: '商业地产项目',
+                        image: '🏠',
+                        description: '投资伙伴投资5000万，MIFC配资8000万，项目成功交付，投资伙伴带来建筑资质、政府关系和销售渠道',
+                        partners: ['房地产基金', '建筑承包商', '金融机构']
+                    }
+                ]
+            },
+            '零售': {
+                product: '零售通',
+                icon: '🛒',
+                description: '零售连锁和品牌扩张融资',
+                cases: [
+                    {
+                        title: '服装连锁品牌',
+                        image: '👔',
+                        description: '投资伙伴投资2000万，MIFC配资3000万，全国开店200家，投资伙伴提供供应链优化和电商平台对接',
+                        partners: ['零售投资基金', '供应链企业', '电商平台']
+                    }
+                ]
+            },
+            '医疗': {
+                product: '医疗通',
+                icon: '🏥',
+                description: '医疗健康行业专业融资服务',
+                cases: [
+                    {
+                        title: '医疗器械公司',
+                        image: '🏥',
+                        description: '投资伙伴投资2000万，MIFC配资3000万，产品成功上市，投资伙伴提供医院渠道、注册审批和临床试验支持',
+                        partners: ['医疗产业基金', '医院集团', '药械经销商']
+                    }
+                ]
+            },
+            '智能制造': {
+                product: '智造通',
+                icon: '🤖',
+                description: '智能制造和工业4.0融资解决方案',
+                cases: [
+                    {
+                        title: '工业机器人制造商',
+                        image: '🤖',
+                        description: '投资伙伴投资3000万，MIFC配资4500万，产品成功打入汽车制造业，投资伙伴提供技术升级和客户资源对接',
+                        partners: ['智能制造基金', '工业集团', '系统集成商']
+                    }
+                ]
+            },
+            '数字经济': {
+                product: '数字通',
+                icon: '📱',
+                description: '数字经济和互联网+融资服务',
+                cases: [
+                    {
+                        title: '电商平台运营商',
+                        image: '📱',
+                        description: '投资伙伴投资1200万，MIFC配资2000万，平台用户增长300%，投资伙伴提供流量支持和技术优化',
+                        partners: ['数字经济基金', '互联网巨头', '技术服务商']
+                    }
+                ]
+            }
+        };
+
+        // 全局变量
+        let currentScenario = 1;
+        let currentAct = 0;
+        let currentMessageIndex = 0;
+        let isTyping = false;
+        let waitingForInput = false;
+        let selectedOption = null;
+        let userIndustry = null;
+
+        // DOM元素
+        const messagesContainer = document.getElementById('messagesContainer');
+        const messageInput = document.getElementById('messageInput');
+        const sendButton = document.getElementById('sendButton');
+        const currentScenarioText = document.getElementById('currentScenario');
+        const scenarioSelect = document.getElementById('scenarioSelect');
+        const actButtons = document.getElementById('actButtons');
+        const actTitle = document.getElementById('actTitle');
+        const actDescription = document.getElementById('actDescription');
+        const actProgress = document.getElementById('actProgress');
+
+        // 初始化 - 直接从脚本开始，不显示欢迎消息
+        document.addEventListener('DOMContentLoaded', function() {
+            generateActButtons();
+            bindEvents();
+            // 直接开始场景1第一幕
+            setTimeout(() => {
+                loadAct();
+            }, 500);
+        });
+
+        // 绑定事件
+        function bindEvents() {
+            // 场景选择
+            scenarioSelect.addEventListener('change', function() {
+                const scenario = parseInt(this.value);
+                switchScenario(scenario);
+            });
+
+            // 发送消息
+            sendButton.addEventListener('click', sendMessage);
+            messageInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    sendMessage();
+                }
+            });
+
+            // 重置演示
+            document.getElementById('resetDemo').addEventListener('click', resetDemo);
+            
+            // 导出报告
+            document.getElementById('exportData').addEventListener('click', exportReport);
+        }
+
+        // 生成戏幕按钮
+        function generateActButtons() {
+            const scenario = roadshowScripts[`scenario${currentScenario}`];
+            actButtons.innerHTML = '';
+            
+            scenario.acts.forEach((act, index) => {
+                const button = document.createElement('button');
+                button.className = `act-btn w-full text-left p-3 rounded-lg glass-panel hover:bg-blue-600/20 transition-all ${index === currentAct ? 'bg-blue-600/30 border border-blue-400' : ''}`;
+                button.dataset.act = index;
+                button.innerHTML = `
+                    <p class="font-medium text-sm">${act.title}</p>
+                    <p class="text-xs text-gray-300">${act.description}</p>
+                `;
+                
+                button.addEventListener('click', function() {
+                    switchAct(parseInt(this.dataset.act));
+                });
+                
+                actButtons.appendChild(button);
+            });
+        }
+
+        // 切换场景
+        function switchScenario(scenario) {
+            currentScenario = scenario;
+            currentAct = 0;
+            currentMessageIndex = 0;
+            
+            updateScenarioDisplay();
+            generateActButtons();
+            loadAct();
+        }
+
+        // 切换戏幕
+        function switchAct(act) {
+            currentAct = act;
+            currentMessageIndex = 0;
+            
+            updateActButtons();
+            loadAct();
+        }
+        
+        // 更新戏幕按钮状态
+        function updateActButtons() {
+            document.querySelectorAll('.act-btn').forEach((btn, index) => {
+                if (index === currentAct) {
+                    btn.className = 'act-btn w-full text-left p-3 rounded-lg glass-panel bg-blue-600/30 border border-blue-400 transition-all';
+                } else {
+                    btn.className = 'act-btn w-full text-left p-3 rounded-lg glass-panel hover:bg-blue-600/20 transition-all';
+                }
+            });
+        }
+        
+        // 更新戏幕信息
+        function updateActInfo() {
+            const scenario = roadshowScripts[`scenario${currentScenario}`];
+            const act = scenario.acts[currentAct];
+            
+            if (act) {
+                actTitle.textContent = act.title;
+                actDescription.textContent = act.description;
+                
+                // 更新进度条
+                const progress = ((currentAct + 1) / scenario.acts.length) * 100;
+                actProgress.style.width = `${progress}%`;
+            }
+        }
+
+        // 更新场景显示
+        function updateScenarioDisplay() {
+            const scenarioNames = {
+                1: '场景1 - 融资方接触',
+                2: '场景2 - 投资伙伴参与', 
+                3: '场景3 - MIFC审核'
+            };
+            
+            const scenarioDescriptions = {
+                1: '融资方寻找投资伙伴，了解MIFC服务',
+                2: '投资伙伴评估项目，生成投资方案',
+                3: 'MIFC专业审核，确保投资安全'
+            };
+            
+            currentScenarioText.innerHTML = `
+                <div class="font-semibold">${scenarioNames[currentScenario]}</div>
+                <div class="text-sm text-gray-400 mt-1">${scenarioDescriptions[currentScenario]}</div>
+            `;
+            scenarioSelect.value = currentScenario;
+        }
+
+        // 加载戏幕
+        function loadAct() {
+            clearMessages();
+            currentMessageIndex = 0;
+            waitingForInput = false;
+            selectedOption = null;
+            
+            const scenario = roadshowScripts[`scenario${currentScenario}`];
+            const act = scenario.acts[currentAct];
+            
+            if (act) {
+                updateActInfo();
+                
+                setTimeout(() => {
+                    playNextMessage();
+                }, 500);
+            } else {
+                addMessage('ai', '当前戏幕暂无对话内容。');
+            }
+        }
+
+        // 播放下一条消息 - 支持多Agent协作
+        function playNextMessage() {
+            const scenario = roadshowScripts[`scenario${currentScenario}`];
+            const act = scenario.acts[currentAct];
+            
+            if (!act || !act.dialogue || currentMessageIndex >= act.dialogue.length) {
+                return;
+            }
+
+            const message = act.dialogue[currentMessageIndex];
+            
+            if (message.type === 'ai') {
+                addTypingIndicator();
+                setTimeout(() => {
+                    removeTypingIndicator();
+                    addMessage('ai', message.content, message.showOptions, message.options, message.agentType || 'central');
+                    currentMessageIndex++;
+                    
+                    // 如果有选项，等待用户选择
+                    if (message.showOptions && message.options) {
+                        waitingForInput = true;
+                        return;
+                    }
+                    
+                    setTimeout(() => {
+                        playNextMessage();
+                    }, 2000);
+                }, 1500);
+            } else if (message.type === 'coordination') {
+                // 显示协调消息
+                addCoordinationMessage(message.targetAgent, message.task);
+                currentMessageIndex++;
+                setTimeout(() => {
+                    playNextMessage();
+                }, 1000);
+            } else {
+                addMessage('user', message.content);
+                currentMessageIndex++;
+                setTimeout(() => {
+                    playNextMessage();
+                }, 1000);
+            }
+        }
+
+        // 添加消息 - 支持多Agent系统
+        function addMessage(type, content, showOptions = false, options = null, agentType = 'central', isCoordination = false) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'flex items-start space-x-3';
+            
+            if (type === 'ai' || agentConfig[type]) {
+                const agent = agentConfig[agentType] || agentConfig['central'];
+                
+                let optionsHtml = '';
+                if (showOptions && options) {
+                    optionsHtml = `
+                        <div class="mt-6 space-y-3">
+                            ${options.map((option, index) => `
+                                <button onclick="selectOption(${index}, \`${option}\`)" 
+                                        class="option-button w-full text-left p-4 rounded-xl font-medium text-white shadow-lg">
+                                    <div class="flex items-center">
+                                        <span class="text-2xl mr-3">${index === 0 ? '💰' : index === 1 ? '📊' : '🎯'}</span>
+                                        <span>${option}</span>
+                                    </div>
+                                </button>
+                            `).join('')}
+                        </div>
+                    `;
+                }
+                
+                const messageClass = isCoordination ? 'coordination-message' : agent.className;
+                const coordinationClass = isCoordination ? 'coordination-indicator' : '';
+                
+                messageDiv.innerHTML = `
+                    <div class="flex flex-col items-center">
+                        <div class="agent-avatar ${agent.className}">
+                            ${agent.avatar}
+                        </div>
+                        <div class="agent-name text-center">${agent.displayName}</div>
+                    </div>
+                    <div class="${messageClass} rounded-lg rounded-tl-none p-3 max-w-lg ${coordinationClass}">
+                        <p class="text-white">${content}</p>
+                        ${optionsHtml}
+                    </div>
+                `;
+            } else {
+                messageDiv.className += ' justify-end';
+                messageDiv.innerHTML = `
+                    <div class="user-message rounded-lg rounded-tr-none p-3 max-w-md">
+                        <p class="text-white">${content}</p>
+                    </div>
+                    <div class="w-8 h-8 user-message rounded-full flex items-center justify-center">
+                        <i class="fas fa-user text-white text-sm"></i>
+                    </div>
+                `;
+            }
+            
+            messagesContainer.appendChild(messageDiv);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+        
+        // 添加协调消息
+        function addCoordinationMessage(targetAgent, task) {
+            const agent = agentConfig[targetAgent];
+            if (!agent) return;
+            
+            const content = `<span class="agent-mention">@${agent.name}</span> ${task}`;
+            addMessage('ai', content, false, null, 'central', true);
+        }
+
+        // 添加输入指示器
+        function addTypingIndicator() {
+            if (isTyping) return;
+            
+            isTyping = true;
+            const typingDiv = document.createElement('div');
+            typingDiv.id = 'typing-indicator';
+            typingDiv.className = 'flex items-start space-x-3';
+            typingDiv.innerHTML = `
+                <div class="w-8 h-8 ai-message rounded-full flex items-center justify-center">
+                    <i class="fas fa-robot text-white text-sm"></i>
+                </div>
+                <div class="ai-message rounded-lg rounded-tl-none p-3">
+                    <div class="typing-indicator">
+                        <span class="text-white">正在输入...</span>
+                    </div>
+                </div>
+            `;
+            
+            messagesContainer.appendChild(typingDiv);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
+        // 移除输入指示器
+        function removeTypingIndicator() {
+            const typingIndicator = document.getElementById('typing-indicator');
+            if (typingIndicator) {
+                typingIndicator.remove();
+            }
+            isTyping = false;
+        }
+
+        // 选择选项 (全局函数)
+        window.selectOption = function(index, option) {
+            if (!waitingForInput) return;
+            
+            selectedOption = index;
+            addMessage('user', option);
+            waitingForInput = false;
+            
+            // 根据选择的选项播放对应的对话流程
+            const optionKey = `option${index + 1}`;
+            const flow = scenario1Flows[optionKey];
+            
+            if (flow && flow.dialogue) {
+                playScenario1Flow(flow.dialogue);
+            }
+        }
+        
+                // 选择行业标签 (全局函数)
+        window.selectIndustry = function(industry) {
+            // if (!waitingForInput) return;
+            
+            // 自动填入输入框
+            messageInput.value = industry;
+            
+            // 模拟用户点击发送按钮
+            addMessage('user', industry);
+            messageInput.value = '';
+            
+            // 处理行业输入
+            handleIndustryInput(industry);
+        }
+        
+        // 播放场景1的对话流程 - 支持多Agent协作
+        function playScenario1Flow(dialogue) {
+            let flowIndex = 0;
+            
+            function playNext() {
+                if (flowIndex >= dialogue.length) {
+                    // 如果是询问行业的消息，等待用户输入
+                    if (dialogue[dialogue.length - 1].content.includes('请描述您的行业')) {
+                        waitingForInput = true;
+                    }
+                    return;
+                }
+                
+                const message = dialogue[flowIndex];
+                
+                if (message.type === 'ai') {
+                    addTypingIndicator();
+                    setTimeout(() => {
+                        removeTypingIndicator();
+                        addMessage('ai', message.content, false, null, message.agentType || 'central');
+                        flowIndex++;
+                        setTimeout(playNext, 2000);
+                    }, 1500);
+                } else if (message.type === 'coordination') {
+                    addCoordinationMessage(message.targetAgent, message.task);
+                    flowIndex++;
+                    setTimeout(playNext, 1000);
+                } else {
+                    addMessage('user', message.content);
+                    flowIndex++;
+                    setTimeout(playNext, 1000);
+                }
+            }
+            
+            setTimeout(playNext, 1000);
+        }
+        
+        // 发送消息
+        function sendMessage() {
+            const message = messageInput.value.trim();
+            if (!message) return;
+            
+            addMessage('user', message);
+            messageInput.value = '';
+            
+            // 检查是否在等待行业输入
+            if (waitingForInput && selectedOption !== null) {
+                handleIndustryInput(message);
+                return;
+            }
+            
+            // 场景2特殊处理
+            if (currentScenario === 2) {
+                handleScenario2Interaction(message);
+                return;
+            }
+            
+            // 模拟AI回复
+            addTypingIndicator();
+            setTimeout(() => {
+                removeTypingIndicator();
+                const aiResponse = generateAIResponse(message);
+                addMessage('ai', aiResponse);
+            }, 1500);
+        }
+        
+        // 处理场景2的交互
+        function handleScenario2Interaction(message) {
+            addTypingIndicator();
+            setTimeout(() => {
+                removeTypingIndicator();
+                
+                // 根据用户问题协调不同的Agent回复
+                let agentType = 'central';
+                let response = '';
+                
+                if (message.includes('财务') || message.includes('营收') || message.includes('利润')) {
+                    agentType = 'finance';
+                    addCoordinationMessage('finance', '请为投资伙伴详细分析项目的财务状况和盈利能力');
+                    setTimeout(() => {
+                        response = generateAIResponse(message);
+                        addMessage('ai', response, false, null, agentType);
+                    }, 1000);
+                } else if (message.includes('风险') || message.includes('安全') || message.includes('保障')) {
+                    agentType = 'risk';
+                    addCoordinationMessage('risk', '请为投资伙伴进行专业的风险评估和安全保障说明');
+                    setTimeout(() => {
+                        response = generateAIResponse(message);
+                        addMessage('ai', response, false, null, agentType);
+                    }, 1000);
+                } else if (message.includes('行业') || message.includes('市场') || message.includes('前景')) {
+                    agentType = 'industry';
+                    addCoordinationMessage('industry', '请为投资伙伴提供专业的行业分析和市场前景评估');
+                    setTimeout(() => {
+                        response = generateAIResponse(message);
+                        addMessage('ai', response, false, null, agentType);
+                    }, 1000);
+                } else if (message.includes('案例') || message.includes('成功') || message.includes('例子')) {
+                    agentType = 'case';
+                    addCoordinationMessage('case', '请为投资伙伴展示相关的成功投资案例和经验分享');
+                    setTimeout(() => {
+                        response = generateAIResponse(message);
+                        addMessage('ai', response, false, null, agentType);
+                    }, 1000);
+                } else if (message.includes('计算') || message.includes('收益') || message.includes('回报')) {
+                    agentType = 'finance';
+                    addCoordinationMessage('finance', '请使用融资计算器为投资伙伴计算预期收益');
+                    setTimeout(() => {
+                        showInvestmentCalculator();
+                    }, 1000);
+                } else {
+                    response = generateAIResponse(message);
+                    addMessage('ai', response, false, null, agentType);
+                }
+            }, 1500);
+        }
+        
+        // 显示投资计算器
+        function showInvestmentCalculator() {
+            const calculatorContent = `
+                <div class="product-highlight rounded-xl p-6 text-white mb-6 shadow-2xl">
+                    <h3 class="text-2xl font-bold mb-3">🧮 投资收益计算器</h3>
+                    <p class="text-lg opacity-90">实时计算您的投资回报</p>
+                </div>
+                
+                <div class="case-card rounded-xl p-6 mb-4 shadow-lg">
+                    <h4 class="text-xl font-bold mb-4 text-yellow-400">📊 收益测算</h4>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                        <div class="success-story rounded-lg p-4">
+                            <h5 class="font-bold mb-2">💰 投资参数</h5>
+                            <ul class="text-sm space-y-1">
+                                <li>• 您的投资：3000万元</li>
+                                <li>• MIFC配资：4500万元</li>
+                                <li>• 收入分成：11%</li>
+                                <li>• 投资期限：5年</li>
+                            </ul>
+                        </div>
+                        
+                        <div class="financing-flow rounded-lg p-4">
+                            <h5 class="font-bold mb-2">📈 预期收益</h5>
+                            <ul class="text-sm space-y-1">
+                                <li>• 年化收益率：23%</li>
+                                <li>• 5年总收益：4600万</li>
+                                <li>• 投资回报倍数：1.53倍</li>
+                                <li>• 月均分成：76.7万</li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <div class="industry-example rounded-lg p-4 mb-4">
+                        <h5 class="font-bold mb-2">📊 分年度收益预测</h5>
+                        <div class="text-sm space-y-1">
+                            <div class="flex justify-between"><span>第1年：</span><span>690万 (23%)</span></div>
+                            <div class="flex justify-between"><span>第2年：</span><span>850万 (28%)</span></div>
+                            <div class="flex justify-between"><span>第3年：</span><span>1020万 (34%)</span></div>
+                            <div class="flex justify-between"><span>第4年：</span><span>1120万 (37%)</span></div>
+                            <div class="flex justify-between"><span>第5年：</span><span>920万 (31%)</span></div>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-green-600/20 rounded-lg p-4 border border-green-400/30">
+                        <p class="text-sm text-green-200">
+                            <strong>💡 风险提示</strong>：以上为预期收益，实际收益可能因市场变化而有所不同。
+                            MIFC提供保底收益年化15%，确保您的投资安全。
+                        </p>
+                    </div>
+                </div>
+            `;
+            
+            addMessage('ai', calculatorContent, false, null, 'finance');
+        }
+        
+        // 处理行业输入
+        function handleIndustryInput(industry) {
+            userIndustry = industry;
+            waitingForInput = false;
+            
+            // 匹配行业产品
+            const matchedProduct = matchIndustryProduct(industry);
+            
+            addTypingIndicator();
+            setTimeout(() => {
+                removeTypingIndicator();
+                if (matchedProduct) {
+                    showIndustryProduct(matchedProduct);
+                } else {
+                    addMessage('ai', `感谢您提供的信息！虽然"${industry}"不在我们的重点行业列表中，但我们仍然可以为您提供定制化的融资解决方案。让我为您介绍我们的通用融资产品。`);
+                }
+            }, 1500);
+        }
+        
+        // 匹配行业产品
+        function matchIndustryProduct(industry) {
+            const industryKeys = Object.keys(industryProducts);
+            
+            for (let key of industryKeys) {
+                if (industry.includes(key) || key.includes(industry)) {
+                    return industryProducts[key];
+                }
+            }
+            
+            // 模糊匹配
+            if (industry.includes('电池') || industry.includes('能源') || industry.includes('光伏') || industry.includes('风力')) {
+                return industryProducts['新能源'];
+            }
+            if (industry.includes('餐饮') || industry.includes('食品') || industry.includes('火锅')) {
+                return industryProducts['餐饮'];
+            }
+            if (industry.includes('房地产') || industry.includes('地产') || industry.includes('建筑')) {
+                return industryProducts['房地产'];
+            }
+            if (industry.includes('零售') || industry.includes('服装') || industry.includes('连锁')) {
+                return industryProducts['零售'];
+            }
+            if (industry.includes('医疗') || industry.includes('健康') || industry.includes('医药') || industry.includes('器械') || industry.includes('制药')) {
+                return industryProducts['医疗'];
+            }
+            if (industry.includes('智能制造') || industry.includes('工业') || industry.includes('机器人') || industry.includes('自动化') || industry.includes('制造')) {
+                return industryProducts['智能制造'];
+            }
+            if (industry.includes('数字经济') || industry.includes('互联网') || industry.includes('电商') || industry.includes('移动应用') || industry.includes('平台') || industry.includes('数字营销')) {
+                return industryProducts['数字经济'];
+            }
+            
+            return null;
+        }
+        
+        // 显示行业产品 - 严格按照roadshow.md要求展示案例卡片，支持多Agent协作
+        function showIndustryProduct(product) {
+            const caseInfo = product.cases[0];
+            const partnersText = caseInfo.partners.join('、');
+            
+            // 先显示协调消息
+            addCoordinationMessage('product', `请为用户展示${userIndustry}行业的专属产品方案和成功案例`);
+            
+            setTimeout(() => {
+                const content = `
+                    太好了！我们有一个产品正好与您的行业适配：<br><br>
+                    <div class="product-highlight rounded-xl p-6 text-white mb-6 shadow-2xl">
+                        <h3 class="text-2xl font-bold mb-3">${product.icon} ${product.product}</h3>
+                        <p class="text-lg opacity-90">${product.description}</p>
+                    </div>
+                    
+                    <div class="case-card rounded-xl p-6 mb-4 shadow-lg">
+                        <div class="flex items-center mb-4">
+                            <div class="text-4xl mr-4">${caseInfo.image}</div>
+                            <div>
+                                <h4 class="text-xl font-bold text-yellow-400 mb-1">${caseInfo.title}</h4>
+                                <p class="text-sm text-blue-300">真实成功案例</p>
+                            </div>
+                        </div>
+                        
+                        <div class="bg-gray-800/50 rounded-lg p-4 mb-4">
+                            <p class="text-gray-300 mb-3">${caseInfo.description}</p>
+                            
+                            <div class="mb-4">
+                                <p class="text-sm font-medium text-blue-300 mb-2">🤝 关键投资伙伴类型：</p>
+                                <div class="flex flex-wrap gap-2">
+                                    ${caseInfo.partners.map(partner => `
+                                        <span class="bg-blue-600/30 text-blue-200 px-3 py-1 rounded-full text-sm">${partner}</span>
+                                    `).join('')}
+                                </div>
+                            </div>
+                            
+                            <div class="success-story rounded-lg p-4 mb-3">
+                                <h5 class="font-bold mb-2">💡 投资伙伴的重要性</h5>
+                                <ul class="text-sm space-y-1">
+                                    <li>• 🏢 <strong>资源对接</strong>：带来行业内的核心资源和合作机会</li>
+                                    <li>• 📈 <strong>业务增长</strong>：提供客户渠道和市场拓展支持</li>
+                                    <li>• 🎯 <strong>专业指导</strong>：分享行业经验和管理智慧</li>
+                                    <li>• 🔗 <strong>生态协同</strong>：构建完整的产业链合作网络</li>
+                                </ul>
+                            </div>
+                            
+                            <div class="financing-flow rounded-lg p-4">
+                                <h5 class="font-bold mb-2">🎯 哪些人/机构是潜在的"投资伙伴"？</h5>
+                                <p class="text-sm mb-2">在您的行业中，以下类型的投资伙伴最有价值：</p>
+                                <ul class="text-sm space-y-1">
+                                    ${caseInfo.partners.map(partner => `
+                                        <li>• <strong>${partner}</strong>：具有行业深度和资源优势</li>
+                                    `).join('')}
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="text-center mb-4">
+                        <p class="text-lg font-semibold text-green-400">您喜欢这种融资方式吗？</p>
+                        <p class="text-blue-300">现在去寻找您的第一位"投资伙伴"吧！</p>
+                    </div>
+                    
+                    <div class="bg-blue-600/20 rounded-lg p-4 border border-blue-400/30">
+                        <p class="text-blue-200 text-sm">🚀 <strong>下一步</strong>：我将为您生成专业的融资故事和分享材料，帮助您在人脉圈中寻找合适的投资伙伴。</p>
+                    </div>
+                `;
+                
+                addMessage('ai', content, false, null, 'product');
+                
+                // 进入第二幕
+                setTimeout(() => {
+                    switchToSecondAct();
+                }, 3000);
+            }, 1500);
+        }
+        
+        // 切换到第二幕
+        function switchToSecondAct() {
+            currentAct = 1;
+            updateActButtons();
+            updateActInfo();
+            
+            // 生成融资故事
+            generateFinancingStory();
+        }
+        
+        // 生成融资故事 - 严格按照roadshow.md第二幕要求，支持多Agent协作
+        function generateFinancingStory() {
+            // 先显示协调消息
+            addCoordinationMessage('finance', `请基于用户的${userIndustry}行业信息，生成专业的融资故事和分享材料`);
+            
+            setTimeout(() => {
+                addTypingIndicator();
+                setTimeout(() => {
+                    removeTypingIndicator();
+                    
+                    const storyContent = `
+                        🎉 <strong>第二幕：如何寻找合作伙伴</strong><br><br>
+                        
+                        基于您提供的行业信息，我已为您生成了专业的融资故事，目标是告诉投资人什么机会、什么方式、怎么赚钱：<br><br>
+                        
+                        <div class="product-highlight rounded-xl p-6 text-white mb-6 shadow-2xl">
+                            <h3 class="text-2xl font-bold mb-3">📖 您的融资故事</h3>
+                            <p class="text-lg opacity-90">专业包装，吸引投资伙伴</p>
+                        </div>
+                        
+                        <div class="case-card rounded-xl p-6 mb-6 shadow-lg">
+                            <h4 class="text-xl font-bold mb-4 text-yellow-400">📝 融资故事核心要素</h4>
+                            
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                                <div class="success-story rounded-lg p-4">
+                                    <h5 class="font-bold mb-2">💡 投资机会</h5>
+                                    <p class="text-sm">${userIndustry}行业正处于快速发展期，市场空间巨大，我们的项目具有明显竞争优势</p>
+                                </div>
+                                
+                                <div class="financing-flow rounded-lg p-4">
+                                    <h5 class="font-bold mb-2">🤝 投资方式</h5>
+                                    <p class="text-sm">收入分成模式，风险可控，投资伙伴获得稳定现金流回报</p>
+                                </div>
+                                
+                                <div class="industry-example rounded-lg p-4">
+                                    <h5 class="font-bold mb-2">💰 盈利模式</h5>
+                                    <p class="text-sm">稳定现金流 + MIFC配资增值，多重收益保障</p>
+                                </div>
+                                
+                                <div class="success-story rounded-lg p-4">
+                                    <h5 class="font-bold mb-2">🚀 退出机制</h5>
+                                    <p class="text-sm">灵活的投资期限和退出选择，保障投资安全</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="bg-blue-600/20 rounded-xl p-6 border border-blue-400/30 mb-6">
+                            <h4 class="text-xl font-bold mb-4 text-blue-300">📱 分享材料生成</h4>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm text-gray-300">
+                                <div class="flex items-center">
+                                    <span class="text-xl mr-2">🔗</span>
+                                    <span>专属投资链接：mifc.ai/project/${Date.now()}</span>
+                                </div>
+                                <div class="flex items-center">
+                                    <span class="text-xl mr-2">📱</span>
+                                    <span>微信小程序二维码</span>
+                                </div>
+                                <div class="flex items-center">
+                                    <span class="text-xl mr-2">🖼️</span>
+                                    <span>精美投资海报</span>
+                                </div>
+                                <div class="flex items-center">
+                                    <span class="text-xl mr-2">📧</span>
+                                    <span>邮件推送模板</span>
+                                </div>
+                                <div class="flex items-center">
+                                    <span class="text-xl mr-2">📄</span>
+                                    <span>投资说明书PDF</span>
+                                </div>
+                                <div class="flex items-center">
+                                    <span class="text-xl mr-2">🎯</span>
+                                    <span>朋友圈推广素材</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="financing-flow rounded-xl p-6 mb-4">
+                            <h4 class="text-xl font-bold mb-3">💼 自定义融资故事功能</h4>
+                            <p class="mb-3">为了让您的融资故事更具说服力，我们提供以下自定义功能：</p>
+                            <ul class="space-y-2 text-sm">
+                                <li>• 📋 <strong>上传文档</strong>：公司资料、财务报表、商业计划书</li>
+                                <li>• 🌐 <strong>网站材料</strong>：官网内容、产品介绍、团队信息</li>
+                                <li>• 📊 <strong>数据分析</strong>：行业报告、市场分析、竞争对手分析</li>
+                                <li>• 🎨 <strong>视觉设计</strong>：专业海报、宣传册、PPT模板</li>
+                                <li>• 📱 <strong>多渠道分享</strong>：微信、邮件、短信、社交媒体</li>
+                            </ul>
+                        </div>
+                        
+                        <div class="text-center">
+                            <p class="text-lg font-semibold text-green-400 mb-2">🎯 融资故事已生成完成！</p>
+                            <p class="text-blue-300">现在您可以通过这些材料在人脉圈中寻找合适的投资伙伴了！</p>
+                        </div>
+                    `;
+                    
+                    addMessage('ai', storyContent, false, null, 'finance');
+                }, 2000);
+            }, 1500);
+        }
+
+        // 生成AI回复 - 支持场景2的专业问答
+        function generateAIResponse(userMessage) {
+            // 场景2专业问答库
+            const scenario2Responses = {
+                '行业分析': '新能源行业正处于快速发展期，政策支持力度大，市场需求旺盛。根据最新行业研报，固态电池技术将在未来3-5年迎来爆发式增长。',
+                '财务状况': '绿能科技财务状况良好，年营收8000万，增长率35%，毛利率42%，净利率18%。现金流稳定，负债率控制在合理范围内。',
+                '技术优势': '公司拥有15项发明专利，技术团队由清华、中科院专家组成，产品安全性比传统锂电池提升40%，能量密度提升25%。',
+                '市场前景': '固态电池市场预计2027年达到2000亿规模，年复合增长率超过30%。公司已与比亚迪、宁德时代建立合作关系。',
+                '风险评估': '主要风险包括技术路线风险、市场竞争风险、政策变化风险。但公司技术领先，有多重风险缓解措施。',
+                '退出机制': '投资期限5年，3年后可申请提前退出。正常退出通过收入分成实现，也可通过股权转让等方式退出。',
+                '配资比例': 'MIFC配资比例通常为1:1到1:3，具体根据项目质量和投资金额确定。本项目建议1:1.5的配资比例。',
+                '投资流程': '完整流程包括：方案确认→KYC验证→MIFC审核→签约→资金到账→投后管理→收益分成。',
+                'KYC': 'KYC流程包括身份验证、资产证明、投资经验确认等。个人投资者和机构投资者要求不同，我们会提供详细指导。'
+            };
+            
+            // 通用回复库
+            const generalResponses = {
+                '收入分成': '收入分成模式是我们的核心创新，投资方可以获得企业未来收入的固定比例分成，风险更低，回报更稳定。',
+                'MIFC': 'MIFC是香港注册的专业投资基金联盟，管理资金超过500亿港币，专注于成长型企业投资。',
+                '滴灌通': '滴灌通是完整的投资生态平台，连接融资方、投资伙伴和MIFC，提供全流程投资服务。',
+                '风险': '我们采用严格的风控体系，包括财务审核、技术评估、市场分析等多维度评估，确保投资安全。'
+            };
+            
+            // 根据当前场景选择合适的回复
+            let responseDb = currentScenario === 2 ? scenario2Responses : generalResponses;
+            
+            for (let key in responseDb) {
+                if (userMessage.includes(key)) {
+                    return responseDb[key];
+                }
+            }
+            
+            // 场景2的默认回复
+            if (currentScenario === 2) {
+                return '感谢您的提问！我会协调专业团队为您详细解答。您可以询问关于项目的任何问题，包括财务状况、技术优势、市场前景、风险评估等。';
+            }
+            
+            return '感谢您的提问！我会根据您的具体需求提供详细解答。您还想了解哪方面的信息？';
+        }
+
+        // 清空消息
+        function clearMessages() {
+            messagesContainer.innerHTML = '';
+        }
+
+        // 重置演示
+        function resetDemo() {
+            currentScenario = 1;
+            currentAct = 0;
+            currentMessageIndex = 0;
+            
+            updateScenarioDisplay();
+            generateActButtons();
+            loadAct();
+        }
+
+        // 导出报告
+        function exportReport() {
+            const reportData = {
+                timestamp: new Date().toISOString(),
+                scenario: currentScenario,
+                act: currentAct,
+                actTitle: actTitle.textContent,
+                messages: Array.from(messagesContainer.children).map(msg => msg.textContent)
+            };
+            
+            const blob = new Blob([JSON.stringify(reportData, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `MIFC路演报告_${new Date().toISOString().split('T')[0]}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+    </script>
+</body>
+</html> 
