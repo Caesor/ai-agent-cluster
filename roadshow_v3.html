@@ -1,0 +1,1168 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>滴灌通AI投资助手</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://unpkg.com/@antv/g2@4.2.8/dist/g2.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        
+        /* 自定义设计规范色彩 */
+        :root {
+            --primary: rgb(0, 109, 98);
+            --secondary: rgb(44, 188, 152);
+            --background: rgb(247, 251, 250);
+            --background-secondary: rgb(247, 248, 250);
+            --text-primary: rgba(0, 0, 0, 0.88);
+            --text-secondary: rgb(102, 102, 102);
+            --text-tertiary: rgb(118, 118, 118);
+            --white: rgb(255, 255, 255);
+            --white-overlay: rgba(255, 255, 255, 0.7);
+        }
+        
+        .bg-brand-primary { background-color: var(--primary); }
+        .bg-brand-secondary { background-color: var(--secondary); }
+        .bg-brand-background { background-color: var(--background); }
+        .bg-brand-background-secondary { background-color: var(--background-secondary); }
+        .text-brand-primary { color: var(--primary); }
+        .text-brand-secondary { color: var(--secondary); }
+        .text-brand-text-primary { color: var(--text-primary); }
+        .text-brand-text-secondary { color: var(--text-secondary); }
+        .text-brand-text-tertiary { color: var(--text-tertiary); }
+        .border-brand-primary { border-color: var(--primary); }
+        
+        .typing-indicator {
+            display: inline-block;
+            animation: typing 1.5s infinite;
+        }
+        
+        @keyframes typing {
+            0%, 20% { opacity: 0; }
+            50% { opacity: 1; }
+            100% { opacity: 0; }
+        }
+        
+        .message-enter {
+            animation: messageSlideIn 0.3s ease-out;
+        }
+        
+        @keyframes messageSlideIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .card-hover {
+            transition: all 0.3s ease;
+        }
+        
+        .card-hover:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+        
+        .gradient-bg {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+        }
+        
+        .glass-effect {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        /* 隐藏滚动条 */
+        .custom-scrollbar {
+            scrollbar-width: none; /* Firefox */
+            -ms-overflow-style: none; /* IE and Edge */
+        }
+        
+        .custom-scrollbar::-webkit-scrollbar {
+            display: none; /* Chrome, Safari, Opera */
+        }
+        
+        /* 图表容器样式 */
+        .chart-container {
+            width: 100%;
+            height: 120px;
+            min-height: 120px;
+        }
+        
+        /* 卡片统一样式 */
+        .investment-card {
+            min-height: 280px;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .investment-card-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        
+        .card-chart-section {
+            height: 160px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        
+        /* 防止文字溢出 */
+        .card-text {
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            hyphens: auto;
+            line-height: 1.4;
+        }
+        
+        .card-title {
+            font-size: 14px;
+            font-weight: 600;
+            line-height: 1.3;
+            margin-bottom: 12px;
+            min-height: 36px;
+            display: flex;
+            align-items: center;
+        }
+        
+        /* 用户消息右对齐样式 */
+        .user-message {
+            flex-direction: row-reverse;
+        }
+        
+        .user-message .message-bubble {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            color: white;
+            border-radius: 18px 18px 4px 18px;
+        }
+        
+        .ai-message .message-bubble {
+            background: white;
+            border-radius: 18px 18px 18px 4px;
+        }
+    </style>
+</head>
+<body class="bg-brand-background min-h-screen" style="font-family: -apple-system, 'system-ui', 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif;">
+    
+    <!-- 头部导航 -->
+    <header class="bg-white shadow-sm border-b border-gray-200 fixed top-0 left-0 right-0 z-50">
+        <div class="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
+            <div class="flex items-center space-x-4">
+                <div class="gradient-bg w-10 h-10 rounded-lg flex items-center justify-center">
+                    <i class="fas fa-seedling text-white text-lg"></i>
+                </div>
+                <div>
+                    <h1 class="text-2xl font-bold text-brand-primary" style="font-family: 'PingFang SC', sans-serif;">滴灌通</h1>
+                    <p class="text-sm text-brand-text-secondary">将国际资本引到中小微企业</p>
+                </div>
+            </div>
+            <div class="flex items-center space-x-4">
+                <div class="text-right">
+                    <p class="text-sm font-medium text-brand-text-primary">张总</p>
+                    <p class="text-xs text-brand-text-secondary">投资人 · 建筑行业</p>
+                </div>
+                <div class="w-10 h-10 bg-brand-secondary rounded-full flex items-center justify-center">
+                    <i class="fas fa-user text-white"></i>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- 主要聊天界面 -->
+    <div class="max-w-4xl mx-auto p-4 mt-20" style="min-height: calc(100vh - 240px); padding-bottom: 120px;">
+        
+        <!-- 聊天消息区域 -->
+        <div id="chatContainer" class="space-y-6 py-6">
+            
+            <!-- 初始消息 -->
+            <div class="flex items-start space-x-3 user-message">
+                <div class="w-8 h-8 bg-orange-500 rounded-full flex items-center justify-center flex-shrink-0">
+                    <i class="fas fa-user text-white text-sm"></i>
+                </div>
+                <div class="flex-1 text-right">
+                    <p class="text-sm text-brand-text-secondary mb-1">张总</p>
+                    <div class="message-bubble px-4 py-3 shadow-sm inline-block max-w-md">
+                        <p class="text-left">我是产业伙伴。看看哪家门店能值得我投资！能不能赚钱，给我整明白点！</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- AI回复消息 -->
+            <div class="flex items-start space-x-3 ai-message">
+                <div class="gradient-bg w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0">
+                    <i class="fas fa-robot text-white text-sm"></i>
+                </div>
+                <div class="flex-1">
+                    <p class="text-sm text-brand-text-secondary mb-1">@滴灌通投资小助手</p>
+                    <div class="message-bubble px-4 py-3 shadow-sm">
+                        <div class="text-brand-text-primary space-y-3">
+                            <p><strong>张总好！</strong>终于等到你，最近又在哪里发财！</p>
+                            <p>欢迎来到滴灌通国际投资有限公司(滴灌投资，MIFC)，滴灌通是由前港交所行政总裁李小加与东英金融创始人张高波于2021年联合创立的金融科技集团，致力于通过收入分成模式投资中小企业。</p>
+                            <p><strong>结论：</strong>建议投资"深圳科技园牛师傅牛肉面店"<span class="text-red-600 font-bold text-lg bg-red-50 px-2 py-1 rounded">投资等级为A</span>，超预期的幸福买它！抓紧投资，比银行存款强多了！总融资额是80万，您<strong class="text-red-600 text-lg">投50万占大头</strong>，预计年化收益<strong class="text-red-600 font-bold text-xl bg-yellow-50 px-2 py-1 rounded">11-18万（年化22%-30%）</strong>！</p>
+                        </div>
+                    </div>
+                    
+                    <!-- 投资信息卡片 -->
+                    <div class="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
+                        
+                        <!-- 卡片1：投资概要 -->
+                        <div class="bg-white rounded-xl p-4 shadow-sm card-hover border border-gray-100 investment-card">
+                            <div class="investment-card-content">
+                                <div>
+                                    <div class="card-title">
+                                        <div class="w-8 h-8 bg-brand-primary bg-opacity-10 rounded-lg flex items-center justify-center mr-3">
+                                            <i class="fas fa-chart-line text-brand-primary"></i>
+                                        </div>
+                                        <span>投资概要</span>
+                                    </div>
+                                    <div class="space-y-2 text-sm card-text">
+                                        <div class="flex justify-between items-center">
+                                            <span class="text-brand-text-secondary">总融资额：</span>
+                                            <span class="font-medium text-brand-text-primary">80万</span>
+                                        </div>
+                                        <div class="flex justify-between items-center">
+                                            <span class="text-brand-text-secondary">您投资：</span>
+                                            <span class="font-medium text-brand-text-primary">50万占大头</span>
+                                        </div>
+                                        <div class="bg-brand-background rounded-lg p-3 mt-3">
+                                            <p class="text-xs text-brand-text-secondary mb-2">分成规则：</p>
+                                            <p class="text-xs">月收入≤40万，分您8%</p>
+                                            <p class="text-xs">月收入>40万：分您12%</p>
+                                            <p class="text-xs text-brand-text-secondary mt-1">多赚多分，收益杠杠的！</p>
+                                            <p class="text-xs text-brand-text-secondary mt-1">按月分红，现金流稳定</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="text-center mt-3">
+                                    <p class="text-lg text-brand-text-primary">11-18万</p>
+                                    <p class="text-xs text-brand-text-secondary">年化收益 22%-30%</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 卡片2：风险控制 -->
+                        <div class="bg-white rounded-xl p-4 shadow-sm card-hover border border-gray-100 investment-card">
+                            <div class="investment-card-content">
+                                <div>
+                                    <div class="card-title">
+                                        <div class="w-8 h-8 bg-orange-500 bg-opacity-10 rounded-lg flex items-center justify-center mr-3">
+                                            <i class="fas fa-shield-alt text-orange-500"></i>
+                                        </div>
+                                        <span>风险控制</span>
+                                    </div>
+                                    <div class="space-y-3 text-sm card-text">
+                                        <div class="flex items-start space-x-2">
+                                            <i class="fas fa-lock text-brand-primary mt-1 text-xs flex-shrink-0"></i>
+                                            <div class="flex-1">
+                                                <p class="font-medium text-brand-text-primary">资金监管</p>
+                                                <p class="text-brand-text-secondary text-xs leading-relaxed">收银系统直连监管账户，每日自动分账到您指定账户</p>
+                                            </div>
+                                        </div>
+                                        <div class="flex items-start space-x-2">
+                                            <i class="fas fa-hammer text-brand-primary mt-1 text-xs flex-shrink-0"></i>
+                                            <div class="flex-1">
+                                                <p class="font-medium text-brand-text-primary">设备抵押</p>
+                                                <p class="text-brand-text-secondary text-xs leading-relaxed">抵押煮面设备（价值80万），经营不善时设备变现优先还款</p>
+                                            </div>
+                                        </div>
+                                        <div class="flex items-start space-x-2">
+                                            <i class="fas fa-piggy-bank text-brand-primary mt-1 text-xs flex-shrink-0"></i>
+                                            <div class="flex-1">
+                                                <p class="font-medium text-brand-text-primary">现金储备</p>
+                                                <p class="text-brand-text-secondary text-xs leading-relaxed">店铺预留10万现金储备，应对原材料价格波动等突发情况</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="flex-1"></div>
+                            </div>
+                        </div>
+
+                        <!-- 卡片3：税收筹划 -->
+                        <div class="bg-white rounded-xl p-4 shadow-sm card-hover border border-gray-100 investment-card">
+                            <div class="investment-card-content">
+                                <div>
+                                    <div class="card-title">
+                                        <div class="w-8 h-8 bg-green-500 bg-opacity-10 rounded-lg flex items-center justify-center mr-3">
+                                            <i class="fas fa-percentage text-green-500"></i>
+                                        </div>
+                                        <span>税收筹划</span>
+                                    </div>
+                                    <div class="text-sm card-text">
+                                        <div class="bg-gradient-to-r from-green-50 to-blue-50 rounded-lg p-4">
+                                            <i class="fas fa-map-marker-alt text-brand-primary text-lg mb-2 block"></i>
+                                            <p class="text-sm font-medium text-brand-text-primary">海南税收优惠</p>
+                                            <p class="text-xs text-brand-text-secondary mt-1 leading-relaxed">通过海南分公司投资，享受所得税15%优惠税率</p>
+                                        </div>
+                                        <div class="bg-brand-background rounded-lg p-3 mt-3">
+                                            <p class="text-xs text-brand-text-secondary">相比内地25%税率可节省10个百分点</p>
+                                            <p class="text-xs text-brand-text-secondary mt-1">合规合法，降低投资成本</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="text-center mt-3">
+                                    <div class="text-sm text-brand-text-primary">
+                                        节税优势明显
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 推荐问题按钮 -->
+                    <div class="mt-4 space-y-2">
+                        <p class="text-xs text-brand-text-tertiary">推荐问题：</p>
+                        <div class="flex flex-wrap gap-2">
+                            <button onclick="selectQuestion('投别家门店试试')" class="px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm text-brand-text-primary hover:border-brand-primary hover:text-brand-primary transition-colors">
+                                投别家门店试试
+                            </button>
+                            <button onclick="selectQuestion('盘盘这家店的情况')" class="px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm text-brand-text-primary hover:border-brand-primary hover:text-brand-primary transition-colors">
+                                盘盘这家店的情况
+                            </button>
+                            <button class="px-3 py-2 bg-gray-100 border border-gray-200 rounded-lg text-sm text-brand-text-tertiary cursor-not-allowed">
+                                感觉不错，直接去投资吧 (置灰)
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 固定底部输入区域 -->
+    <div class="fixed bottom-0 left-0 right-0 bg-brand-background border-t border-gray-200 pt-4 pb-4 z-40">
+        <div class="max-w-4xl mx-auto px-4">
+            <div class="flex items-end space-x-3">
+                <div class="flex-1">
+                    <textarea 
+                        id="messageInput"
+                        placeholder="您可以问我问题哦~" 
+                        class="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl resize-none focus:outline-none focus:border-brand-primary focus:ring-2 focus:ring-brand-primary focus:ring-opacity-20 text-brand-text-primary"
+                        rows="2"
+                        style="font-size: 14px;"
+                    ></textarea>
+                </div>
+                <button onclick="sendMessage()" class="bg-brand-primary text-white px-4 py-3 rounded-xl hover:bg-opacity-90 transition-colors flex items-center justify-center">
+                    <i class="fas fa-paper-plane"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let conversationStep = 0;
+        
+        function selectQuestion(question) {
+            addUserMessage(question);
+            
+            setTimeout(() => {
+                if (question === '盘盘这家店的情况') {
+                    showStoreAnalysis();
+                } else if (question === '投别家门店试试') {
+                    showAlternativeStore();
+                } else if (question === '给投资这家店算算命，看看是不是真的能赚钱') {
+                    showInvestmentFortune();
+                } else if (question === '给我找几个业内大咖帮忙把把关') {
+                    showExpertAdvice();
+                }
+            }, 1000);
+        }
+        
+        function addUserMessage(message) {
+            const chatContainer = document.getElementById('chatContainer');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'flex items-start space-x-3 message-enter user-message';
+            messageDiv.innerHTML = `
+                <div class="w-8 h-8 bg-orange-500 rounded-full flex items-center justify-center flex-shrink-0">
+                    <i class="fas fa-user text-white text-sm"></i>
+                </div>
+                <div class="flex-1 text-right">
+                    <p class="text-sm text-brand-text-secondary mb-1">张总</p>
+                    <div class="message-bubble px-4 py-3 shadow-sm inline-block max-w-md">
+                        <p class="text-left">${message}</p>
+                    </div>
+                </div>
+            `;
+            chatContainer.appendChild(messageDiv);
+            // 滚动到页面底部
+            window.scrollTo({
+                top: document.body.scrollHeight,
+                behavior: 'smooth'
+            });
+        }
+        
+        function addAIMessage(content) {
+            const chatContainer = document.getElementById('chatContainer');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'flex items-start space-x-3 message-enter';
+            messageDiv.innerHTML = content;
+            chatContainer.appendChild(messageDiv);
+            // 滚动到页面底部
+            window.scrollTo({
+                top: document.body.scrollHeight,
+                behavior: 'smooth'
+            });
+        }
+        
+        function showStoreAnalysis() {
+            const content = `
+                <div class="gradient-bg w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0">
+                    <i class="fas fa-robot text-white text-sm"></i>
+                </div>
+                <div class="flex-1">
+                    <p class="text-sm text-brand-text-secondary mb-1">@滴灌通投资小助手</p>
+                    <div class="message-bubble px-4 py-3 shadow-sm">
+                        <div class="text-brand-text-primary space-y-3">
+                            <p><strong>张总好！</strong>这家牛肉面店的情况都给您整清楚了！</p>
+                            <p><strong>结论：</strong><span class="text-red-600 font-bold text-lg bg-green-50 px-2 py-1 rounded">位置好、吃饭人多</span>，但<span class="text-orange-600 font-bold">竞争也凶</span>！</p>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div class="bg-white rounded-xl p-4 shadow-sm card-hover border border-gray-100 investment-card">
+                            <div class="investment-card-content">
+                                <div>
+                                    <div class="card-title">
+                                        <div class="w-8 h-8 bg-blue-500 bg-opacity-10 rounded-lg flex items-center justify-center mr-3">
+                                            <i class="fas fa-users text-blue-500"></i>
+                                        </div>
+                                        <span>人流量</span>
+                                    </div>
+                                    <div class="space-y-2 text-sm card-text">
+                                        <p><strong>工作日：</strong>中午有1.2万人路过店门口，人流量密集</p>
+                                        <p><strong>周末：</strong>人流量约6000人，相对平缓</p>
+                                        <p class="text-xs text-brand-text-secondary">位于科技园核心区域，上班族集中</p>
+                                        <p class="text-xs text-brand-text-secondary">附近写字楼密布，就餐需求旺盛</p>
+                                    </div>
+                                </div>
+                                <div class="card-chart-section">
+                                    <div class="bg-blue-50 rounded-lg p-2">
+                                        <div id="heatmap-chart" class="chart-container"></div>
+                                        <p class="text-xs text-brand-text-secondary mt-1 text-center">人流量热力图</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="bg-white rounded-xl p-4 shadow-sm card-hover border border-gray-100 investment-card">
+                            <div class="investment-card-content">
+                                <div>
+                                    <div class="card-title">
+                                        <div class="w-8 h-8 bg-red-500 bg-opacity-10 rounded-lg flex items-center justify-center mr-3">
+                                            <i class="fas fa-trophy text-red-500"></i>
+                                        </div>
+                                        <span>竞争对手</span>
+                                    </div>
+                                    <div class="space-y-2 text-sm card-text">
+                                        <p>面馆共12家，咱家排第3（前两名是'李先生'和'和府捞面'）</p>
+                                        <p>咱家牛肉面25元/碗，比主要对手便宜5元</p>
+                                        <p class="text-xs text-brand-text-secondary">在保证品质的同时具备价格优势</p>
+                                        <p class="text-xs text-brand-text-secondary">性价比较高，客户接受度良好</p>
+                                    </div>
+                                </div>
+                                <div class="card-chart-section">
+                                    <div class="bg-red-50 rounded-lg p-2">
+                                        <div id="bar-chart" class="chart-container"></div>
+                                        <p class="text-xs text-brand-text-secondary mt-1 text-center">竞争比对图</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="bg-white rounded-xl p-4 shadow-sm card-hover border border-gray-100 investment-card">
+                            <div class="investment-card-content">
+                                <div>
+                                    <div class="card-title">
+                                        <div class="w-8 h-8 bg-green-500 bg-opacity-10 rounded-lg flex items-center justify-center mr-3">
+                                            <i class="fas fa-dollar-sign text-green-500"></i>
+                                        </div>
+                                        <span>客户消费力</span>
+                                    </div>
+                                    <div class="space-y-2 text-sm card-text">
+                                        <p>80%是腾讯、华为员工，月平均工资1.5万+</p>
+                                        <p>客户消费能力强，对价格敏感度较低</p>
+                                        <p class="text-xs text-brand-text-secondary">主要客户群体收入稳定</p>
+                                        <p class="text-xs text-brand-text-secondary">注重用餐效率和食品品质</p>
+                                    </div>
+                                </div>
+                                <div class="card-chart-section">
+                                    <div class="bg-green-50 rounded-lg p-2">
+                                        <div id="pie-chart" class="chart-container"></div>
+                                        <p class="text-xs text-brand-text-secondary mt-1 text-center">消费能力饼状图</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-4 space-y-2">
+                        <p class="text-xs text-brand-text-tertiary">推荐问题：</p>
+                        <div class="flex flex-wrap gap-2">
+                            <button onclick="selectQuestion('给投资这家店算算命，看看是不是真的能赚钱')" class="px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm text-brand-text-primary hover:border-brand-primary hover:text-brand-primary transition-colors">
+                                给投资这家店算算命，看看是不是真的能赚钱
+                            </button>
+                            <button onclick="selectQuestion('给我找几个业内大咖帮忙把把关')" class="px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm text-brand-text-primary hover:border-brand-primary hover:text-brand-primary transition-colors">
+                                给我找几个业内大咖帮忙把把关
+                            </button>
+                            <button class="px-3 py-2 bg-gray-100 border border-gray-200 rounded-lg text-sm text-brand-text-tertiary cursor-not-allowed">
+                                感觉不错，先投点试试 (置灰)
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            addAIMessage(content);
+            
+            // 延迟渲染图表
+            setTimeout(() => {
+                renderHeatmapChart('heatmap-chart');
+                renderBarChart('bar-chart');
+                renderPieChart('pie-chart');
+            }, 500);
+        }
+        
+        function showInvestmentFortune() {
+            const content = `
+                <div class="gradient-bg w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0">
+                    <i class="fas fa-robot text-white text-sm"></i>
+                </div>
+                <div class="flex-1">
+                    <p class="text-sm text-brand-text-secondary mb-1">@滴灌通投资算命小助手</p>
+                    <div class="message-bubble px-4 py-3 shadow-sm">
+                        <div class="text-brand-text-primary space-y-3">
+                            <p><strong>张总好！</strong>@滴灌通投资算命小助手 我用大数据给您测算了<span class="text-red-600 font-bold text-lg bg-blue-50 px-2 py-1 rounded">5000次</span>，模拟了各种可能性</p>
+                            <p><strong>结论：</strong><span class="text-red-600 font-bold text-lg bg-green-50 px-2 py-1 rounded">十拿九稳能赚钱</span>，但<span class="text-orange-600 font-bold">防着牛肉涨价</span></p>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div class="bg-white rounded-xl p-4 shadow-sm card-hover border border-gray-100 investment-card">
+                            <div class="investment-card-content">
+                                <div>
+                                    <div class="card-title">
+                                        <div class="w-8 h-8 bg-purple-500 bg-opacity-10 rounded-lg flex items-center justify-center mr-3">
+                                            <i class="fas fa-dice text-purple-500"></i>
+                                        </div>
+                                        <span>赚钱概率</span>
+                                    </div>
+                                    <div class="text-center card-text">
+                                        <div class="text-2xl text-brand-text-primary mb-2">70%</div>
+                                        <p class="text-sm text-brand-text-primary">机会年赚100万以上</p>
+                                        <p class="text-xs text-brand-text-secondary">保本点约60万，风险相对可控</p>
+                                        <p class="text-xs text-brand-text-secondary mt-2">基于历史数据和市场分析</p>
+                                        <p class="text-xs text-brand-text-secondary">模拟5000种经营场景得出</p>
+                                    </div>
+                                </div>
+                                <div class="card-chart-section">
+                                    <div class="bg-purple-50 rounded-lg p-2">
+                                        <div id="probability-chart" class="chart-container"></div>
+                                        <p class="text-xs text-brand-text-secondary mt-1 text-center">赚钱概率图</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="bg-white rounded-xl p-4 shadow-sm card-hover border border-gray-100 investment-card">
+                            <div class="investment-card-content">
+                                <div>
+                                    <div class="card-title">
+                                        <div class="w-8 h-8 bg-red-500 bg-opacity-10 rounded-lg flex items-center justify-center mr-3">
+                                            <i class="fas fa-exclamation-triangle text-red-500"></i>
+                                        </div>
+                                        <span>最大风险</span>
+                                    </div>
+                                    <div class="space-y-3 card-text">
+                                        <div class="bg-red-50 rounded-lg p-3">
+                                            <p class="text-sm font-medium text-orange-700">原材料风险</p>
+                                            <p class="text-xs text-brand-text-secondary mt-1 leading-relaxed">牛肉价格波动：现价30元/斤</p>
+                                            <p class="text-xs text-brand-text-secondary">若涨至40元/斤，利润下降20%</p>
+                                        </div>
+                                        <div class="bg-gray-50 rounded-lg p-3">
+                                            <p class="text-xs text-brand-text-secondary">建议：建立供应商合作关系</p>
+                                            <p class="text-xs text-brand-text-secondary">签订价格锁定协议</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="flex items-center justify-between text-sm">
+                                    <span>风险等级:</span>
+                                    <span class="text-orange-500 bg-orange-50 px-2 py-1 rounded">中等</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="bg-white rounded-xl p-4 shadow-sm card-hover border border-gray-100 investment-card">
+                            <div class="investment-card-content">
+                                <div>
+                                    <div class="card-title">
+                                        <div class="w-8 h-8 bg-green-500 bg-opacity-10 rounded-lg flex items-center justify-center mr-3">
+                                            <i class="fas fa-shield-alt text-green-500"></i>
+                                        </div>
+                                        <span>安全线建议</span>
+                                    </div>
+                                    <div class="space-y-3 card-text">
+                                        <p class="text-sm leading-relaxed">分成规则动态调整：月流水40万以下时降低分成比例</p>
+                                        <p class="text-xs text-brand-text-secondary">通过灵活分成机制降低投资风险</p>
+                                        <p class="text-xs text-brand-text-secondary">确保店铺现金流健康运转</p>
+                                    </div>
+                                </div>
+                                <div class="bg-green-50 rounded-lg p-3">
+                                    <div class="flex justify-between text-xs mb-1">
+                                        <span>当前安全度</span>
+                                        <span>50%</span>
+                                    </div>
+                                    <div class="w-full bg-gray-200 rounded-full h-3">
+                                        <div class="bg-green-500 h-3 rounded-full transition-all duration-300" style="width: 50%"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-4 space-y-2">
+                        <p class="text-xs text-brand-text-tertiary">推荐问题：</p>
+                        <div class="flex flex-wrap gap-2">
+                            <button onclick="selectQuestion('给我语音播报下')" class="px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm text-brand-text-primary hover:border-brand-primary hover:text-brand-primary transition-colors">
+                                给我语音播报下
+                            </button>
+                            <button onclick="selectQuestion('给我找几个业内大咖帮忙把把关')" class="px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm text-brand-text-primary hover:border-brand-primary hover:text-brand-primary transition-colors">
+                                给我找几个业内大咖把把关
+                            </button>
+                            <button class="px-3 py-2 bg-gray-100 border border-gray-200 rounded-lg text-sm text-brand-text-tertiary cursor-not-allowed">
+                                感觉不错，先投点试试 (置灰)
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            addAIMessage(content);
+            
+            // 延迟渲染概率图表
+            setTimeout(() => {
+                renderProbabilityChart('probability-chart');
+            }, 500);
+        }
+        
+        function showExpertAdvice() {
+            const content = `
+                <div class="gradient-bg w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0">
+                    <i class="fas fa-robot text-white text-sm"></i>
+                </div>
+                <div class="flex-1">
+                    <p class="text-sm text-brand-text-secondary mb-1">@滴灌通业内大咖小助手</p>
+                    <div class="message-bubble px-4 py-3 shadow-sm">
+                        <div class="text-brand-text-primary space-y-3">
+                            <p><strong>张总好！</strong>没问题，这就给您找几个专业的财务、法务、风控大咖帮您参谋一下</p>
+                            <div class="bg-brand-background rounded-lg p-3">
+                                <p class="font-semibold text-brand-primary">总结大咖建议：放心投！</p>
+                                <p class="text-sm">只要盯住肉价、押牢设备，年赚<span class="text-red-600 font-bold text-xl bg-yellow-50 px-2 py-1 rounded">22%</span>稳当当！</p>
+                                <p class="text-sm text-red-600 font-bold text-lg animate-pulse bg-red-50 px-2 py-1 rounded">已经有投资人投资了20万了，待融资额就剩60万了，赶紧投！</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div class="bg-white rounded-xl p-4 shadow-sm card-hover border border-gray-100 investment-card">
+                            <div class="investment-card-content">
+                                <div>
+                                    <div class="card-title">
+                                        <div class="w-8 h-8 bg-blue-500 bg-opacity-10 rounded-lg flex items-center justify-center mr-3">
+                                            <i class="fas fa-calculator text-blue-500"></i>
+                                        </div>
+                                        <span>@财务大咖小助手</span>
+                                    </div>
+                                    <div class="space-y-2 text-sm card-text">
+                                        <p class="leading-relaxed">店铺手机支付占90%，资金到账周期3天</p>
+                                        <p class="text-xs text-brand-text-secondary">现金流管理存在时间差</p>
+                                    </div>
+                                </div>
+                                <div class="bg-blue-50 rounded-lg p-3">
+                                    <p class="font-medium text-blue-700">建议设立监管账户</p>
+                                    <p class="text-xs text-blue-600 leading-relaxed">每日自动分账，确保资金透明</p>
+                                    <p class="text-xs text-blue-600 leading-relaxed">实时掌握经营状况和收益分配</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="bg-white rounded-xl p-4 shadow-sm card-hover border border-gray-100 investment-card">
+                            <div class="investment-card-content">
+                                <div>
+                                    <div class="card-title">
+                                        <div class="w-8 h-8 bg-purple-500 bg-opacity-10 rounded-lg flex items-center justify-center mr-3">
+                                            <i class="fas fa-gavel text-purple-500"></i>
+                                        </div>
+                                        <span>@法务大咖小助手</span>
+                                    </div>
+                                    <div class="space-y-2 text-sm card-text">
+                                        <p class="leading-relaxed">合同需要补充设备抵押条款（设备价值80万）</p>
+                                        <p class="text-xs text-brand-text-secondary">完善法律保障机制</p>
+                                    </div>
+                                </div>
+                                <div class="bg-purple-50 rounded-lg p-3">
+                                    <p class="font-medium text-purple-700">抵押担保条款</p>
+                                    <p class="text-xs text-purple-600 leading-relaxed">经营不善时设备变现优先偿还</p>
+                                    <p class="text-xs text-purple-600 leading-relaxed">降低投资人资金损失风险</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="bg-white rounded-xl p-4 shadow-sm card-hover border border-gray-100 investment-card">
+                            <div class="investment-card-content">
+                                <div>
+                                    <div class="card-title">
+                                        <div class="w-8 h-8 bg-orange-500 bg-opacity-10 rounded-lg flex items-center justify-center mr-3">
+                                            <i class="fas fa-user-shield text-orange-500"></i>
+                                        </div>
+                                        <span>@评级大咖小助手</span>
+                                    </div>
+                                    <div class="space-y-2 text-sm card-text">
+                                        <div class="flex items-center space-x-2 flex-wrap">
+                                            <span>老板信用评级良好</span>
+                                            <span class="bg-green-100 text-green-700 px-2 py-1 rounded text-xs">725分</span>
+                                        </div>
+                                        <p class="text-xs text-brand-text-secondary">个人征信记录无不良信息</p>
+                                    </div>
+                                </div>
+                                <div class="bg-orange-50 rounded-lg p-3">
+                                    <p class="font-medium text-orange-700">风险隔离建议</p>
+                                    <p class="text-xs text-orange-600 leading-relaxed">其他业务（奶茶店）经营不佳</p>
+                                    <p class="text-xs text-orange-600 leading-relaxed">建议设立独立运营主体，避免连带风险</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-4 space-y-2">
+                        <p class="text-xs text-brand-text-tertiary">推荐问题：</p>
+                        <div class="flex flex-wrap gap-2">
+                            <button onclick="selectQuestion('给投资这家店再算算命，看看是不是真的能赚钱')" class="px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm text-brand-text-primary hover:border-brand-primary hover:text-brand-primary transition-colors">
+                                给投资这家店再算算命，看看是不是真的能赚钱
+                            </button>
+                            <button class="px-3 py-2 bg-gray-100 border border-gray-200 rounded-lg text-sm text-brand-text-tertiary cursor-not-allowed">
+                                感觉不错，先投点试试 (置灰)
+                            </button>
+                            <button class="px-3 py-2 bg-gray-100 border border-gray-200 rounded-lg text-sm text-brand-text-tertiary cursor-not-allowed">
+                                去体验融资伙伴生态 (置灰)
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            addAIMessage(content);
+        }
+        
+        function sendMessage() {
+            const messageInput = document.getElementById('messageInput');
+            const message = messageInput.value.trim();
+            if (message) {
+                addUserMessage(message);
+                messageInput.value = '';
+                
+                // 简单的AI响应逻辑
+                setTimeout(() => {
+                    addAIMessage(`
+                        <div class="gradient-bg w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0">
+                            <i class="fas fa-robot text-white text-sm"></i>
+                        </div>
+                        <div class="flex-1">
+                            <p class="text-sm text-brand-text-secondary mb-1">@滴灌通投资小助手</p>
+                            <div class="message-bubble px-4 py-3 shadow-sm">
+                                <p class="text-brand-text-primary">感谢您的问题！我们的<span class="text-red-600 font-bold">AI助手</span>正在为您分析更多<span class="text-red-600 font-bold">投资机会</span>，请稍候...</p>
+                            </div>
+                        </div>
+                    `);
+                }, 1000);
+            }
+        }
+        
+        // 回车发送消息
+        document.getElementById('messageInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+        
+        // 模拟打字效果
+        function showTypingIndicator() {
+            const chatContainer = document.getElementById('chatContainer');
+            const typingDiv = document.createElement('div');
+            typingDiv.id = 'typing-indicator';
+            typingDiv.className = 'flex items-start space-x-3';
+            typingDiv.innerHTML = `
+                <div class="gradient-bg w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0">
+                    <i class="fas fa-robot text-white text-sm"></i>
+                </div>
+                <div class="flex-1">
+                    <p class="text-sm text-brand-text-secondary mb-1">@滴灌通投资小助手</p>
+                    <div class="message-bubble px-4 py-3 shadow-sm">
+                        <div class="flex items-center space-x-1">
+                            <div class="typing-indicator">●</div>
+                            <div class="typing-indicator" style="animation-delay: 0.2s;">●</div>
+                            <div class="typing-indicator" style="animation-delay: 0.4s;">●</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            chatContainer.appendChild(typingDiv);
+            // 滚动到页面底部
+            window.scrollTo({
+                top: document.body.scrollHeight,
+                behavior: 'smooth'
+            });
+        }
+        
+        function removeTypingIndicator() {
+            const typingIndicator = document.getElementById('typing-indicator');
+            if (typingIndicator) {
+                typingIndicator.remove();
+            }
+        }
+        
+        function showAlternativeStore() {
+            const content = `
+                <div class="gradient-bg w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0">
+                    <i class="fas fa-robot text-white text-sm"></i>
+                </div>
+                <div class="flex-1">
+                    <p class="text-sm text-brand-text-secondary mb-1">@滴灌通投资小助手</p>
+                    <div class="message-bubble px-4 py-3 shadow-sm">
+                        <div class="text-brand-text-primary space-y-3">
+                            <p><strong>张总好！</strong>没问题，这里有各种各样的投资机会</p>
+                            <p><strong>结论：</strong>建议投资"北京西单便民超市"，<span class="text-red-600 font-bold text-lg bg-red-50 px-2 py-1 rounded">投资等级为A</span>，稳稳的幸福买它！抓紧投资，比银行存款强多了！总融资额是20万，您可以<strong class="text-red-600 text-lg">投5万试试</strong>，预计年化收益<strong class="text-red-600 font-bold text-xl bg-yellow-50 px-2 py-1 rounded">0.5-1万（年化10%-20%）</strong></p>
+                        </div>
+                    </div>
+                    
+                    <!-- 投资信息卡片 -->
+                    <div class="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
+                        
+                        <!-- 卡片1：投资概要 -->
+                        <div class="bg-white rounded-xl p-4 shadow-sm card-hover border border-gray-100 investment-card">
+                            <div class="investment-card-content">
+                                <div>
+                                    <div class="card-title">
+                                        <div class="w-8 h-8 bg-brand-primary bg-opacity-10 rounded-lg flex items-center justify-center mr-3">
+                                            <i class="fas fa-chart-line text-brand-primary"></i>
+                                        </div>
+                                        <span>投资概要</span>
+                                    </div>
+                                    <div class="space-y-2 text-sm card-text">
+                                        <div class="flex justify-between items-center">
+                                            <span class="text-brand-text-secondary">总融资额：</span>
+                                            <span class="font-medium text-brand-text-primary">20万</span>
+                                        </div>
+                                        <div class="flex justify-between items-center">
+                                            <span class="text-brand-text-secondary">您投资：</span>
+                                            <span class="font-medium text-brand-primary">5万试试</span>
+                                        </div>
+                                        <div class="bg-brand-background rounded-lg p-3 mt-3">
+                                            <p class="text-xs text-brand-text-secondary mb-2">分成规则：</p>
+                                            <p class="text-xs">月收入≤40万，分您8%</p>
+                                            <p class="text-xs">月收入>40万：分您12%</p>
+                                            <p class="text-xs text-brand-secondary font-medium mt-1">多赚多分，收益杠杠的！</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="text-center mt-3">
+                                    <p class="text-lg text-brand-text-primary">0.5-1万</p>
+                                    <p class="text-xs text-brand-text-secondary">年化收益 10%-20%</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 卡片2：风险控制 -->
+                        <div class="bg-white rounded-xl p-4 shadow-sm card-hover border border-gray-100 investment-card">
+                            <div class="investment-card-content">
+                                <div>
+                                    <div class="card-title">
+                                        <div class="w-8 h-8 bg-orange-500 bg-opacity-10 rounded-lg flex items-center justify-center mr-3">
+                                            <i class="fas fa-shield-alt text-orange-500"></i>
+                                        </div>
+                                        <span>风险控制</span>
+                                    </div>
+                                    <div class="space-y-3 text-sm card-text">
+                                        <div class="flex items-start space-x-2">
+                                            <i class="fas fa-lock text-brand-primary mt-1 text-xs flex-shrink-0"></i>
+                                            <div class="flex-1">
+                                                <p class="font-medium text-brand-text-primary">锁住钱箱</p>
+                                                <p class="text-brand-text-secondary text-xs leading-relaxed">收银系统直连监管账户（每日自动分账）</p>
+                                            </div>
+                                        </div>
+                                        <div class="flex items-start space-x-2">
+                                            <i class="fas fa-store text-brand-primary mt-1 text-xs flex-shrink-0"></i>
+                                            <div class="flex-1">
+                                                <p class="font-medium text-brand-text-primary">抵押设备</p>
+                                                <p class="text-brand-text-secondary text-xs leading-relaxed">抵押超市设备（价值60万），亏钱时优先还您</p>
+                                            </div>
+                                        </div>
+                                        <div class="flex items-start space-x-2">
+                                            <i class="fas fa-piggy-bank text-brand-primary mt-1 text-xs flex-shrink-0"></i>
+                                            <div class="flex-1">
+                                                <p class="font-medium text-brand-text-primary">备用现金</p>
+                                                <p class="text-brand-text-secondary text-xs leading-relaxed">店里留5万现金（防租金暴涨）</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="flex-1"></div>
+                            </div>
+                        </div>
+
+                        <!-- 卡片3：税收筹划 -->
+                        <div class="bg-white rounded-xl p-4 shadow-sm card-hover border border-gray-100 investment-card">
+                            <div class="investment-card-content">
+                                <div>
+                                    <div class="card-title">
+                                        <div class="w-8 h-8 bg-green-500 bg-opacity-10 rounded-lg flex items-center justify-center mr-3">
+                                            <i class="fas fa-percentage text-green-500"></i>
+                                        </div>
+                                        <span>税收筹划</span>
+                                    </div>
+                                    <div class="space-y-3 text-sm card-text">
+                                        <div class="bg-gradient-to-r from-green-50 to-blue-50 rounded-lg p-3">
+                                            <i class="fas fa-map-marker-alt text-brand-primary text-lg mb-2 block"></i>
+                                            <p class="text-sm font-medium text-brand-text-primary">通过海南分公司投钱</p>
+                                            <p class="text-xs text-brand-text-secondary mt-1 leading-relaxed">所得税15%，比内地少10%</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="bg-orange-50 rounded-lg p-3">
+                                    <div class="flex items-center space-x-2 mb-1 flex-wrap">
+                                        <span class="text-sm">老板信用评级</span>
+                                        <span class="bg-green-100 text-green-700 px-2 py-1 rounded text-xs">725分</span>
+                                    </div>
+                                    <p class="text-xs text-orange-600 leading-relaxed">其他业务经营状况一般</p>
+                                    <p class="text-xs text-orange-600 leading-relaxed">建议业务隔离，独立核算</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 推荐问题按钮 -->
+                    <div class="mt-4 space-y-2">
+                        <p class="text-xs text-brand-text-tertiary">推荐问题：</p>
+                        <div class="flex flex-wrap gap-2">
+                            <button class="px-3 py-2 bg-gray-100 border border-gray-200 rounded-lg text-sm text-brand-text-tertiary cursor-not-allowed">
+                                给投资这家店再算算命，看看是不是真的能赚钱 (置灰)
+                            </button>
+                            <button class="px-3 py-2 bg-gray-100 border border-gray-200 rounded-lg text-sm text-brand-text-tertiary cursor-not-allowed">
+                                感觉不错，先投点试试 (置灰)
+                            </button>
+                            <button class="px-3 py-2 bg-gray-100 border border-gray-200 rounded-lg text-sm text-brand-text-tertiary cursor-not-allowed">
+                                去体验融资伙伴生态 (置灰)
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            addAIMessage(content);
+        }
+        
+        // 图表渲染函数 - 人流量热力图
+        function renderHeatmapChart(containerId) {
+            // 真正的热力图数据：不同时间段的人流量密度
+            const data = [
+                // 工作日数据
+                { hour: '9时', day: '工作日', value: 3000 },
+                { hour: '10时', day: '工作日', value: 5000 },
+                { hour: '11时', day: '工作日', value: 8000 },
+                { hour: '12时', day: '工作日', value: 12000 }, // 中午高峰
+                { hour: '13时', day: '工作日', value: 10000 },
+                { hour: '14时', day: '工作日', value: 6000 },
+                { hour: '15时', day: '工作日', value: 4000 },
+                { hour: '16时', day: '工作日', value: 3000 },
+                // 周末数据  
+                { hour: '9时', day: '周末', value: 1500 },
+                { hour: '10时', day: '周末', value: 2500 },
+                { hour: '11时', day: '周末', value: 4000 },
+                { hour: '12时', day: '周末', value: 6000 }, // 周末中午
+                { hour: '13时', day: '周末', value: 5000 },
+                { hour: '14时', day: '周末', value: 3000 },
+                { hour: '15时', day: '周末', value: 2000 },
+                { hour: '16时', day: '周末', value: 1500 }
+            ];
+            
+            const chart = new G2.Chart({
+                container: containerId,
+                width: 200,
+                height: 100,
+                padding: [15, 10, 30, 40]
+            });
+            
+            chart.data(data);
+            chart.scale('value', { min: 0, max: 12000 });
+            
+            // 使用热力图几何标记
+            chart.polygon().position('hour*day').color('value', ['#f7fcf0', '#e0f3db', '#ccebc5', '#a8ddb5', '#7bccc4', '#4eb3d3', '#2b8cbe', '#0868ac', '#084081']);
+            
+            chart.axis('hour', {
+                title: null,
+                label: { style: { fontSize: 8 } }
+            });
+            chart.axis('day', {
+                title: null,
+                label: { style: { fontSize: 9 } }
+            });
+            
+            // 添加图例
+            chart.legend('value', {
+                position: 'right',
+                title: '人流量',
+                itemWidth: 8,
+                itemHeight: 8
+            });
+            
+            chart.render();
+        }
+        
+        function renderBarChart(containerId) {
+            // 面馆竞争对手价格对比数据（咱家排第3）
+            const data = [
+                { name: '李先生', price: 30, rank: 1 },
+                { name: '和府捞面', price: 30, rank: 2 },
+                { name: '牛师傅', price: 25, rank: 3 },
+                { name: '其他面馆', price: 27, rank: 4 }
+            ];
+            
+            const chart = new G2.Chart({
+                container: containerId,
+                width: 200,
+                height: 100,
+                padding: [10, 10, 30, 60]
+            });
+            
+            chart.data(data);
+            chart.scale('price', { min: 20, max: 35 });
+            
+            chart.interval().position('name*price').color('name', (name) => {
+                if (name === '牛师傅') return 'rgb(44, 188, 152)'; // 我们的店用品牌色
+                if (name === '李先生' || name === '和府捞面') return 'rgb(239, 68, 68)'; // 主要竞争对手用红色
+                return 'rgb(156, 163, 175)'; // 其他用灰色
+            });
+            
+            chart.axis('name', {
+                title: null,
+                label: { style: { fontSize: 9 } }
+            });
+            chart.axis('price', {
+                title: null,
+                label: { style: { fontSize: 9 } }
+            });
+            
+            // 添加标注说明我们便宜5块钱
+            chart.annotation().text({
+                position: ['牛师傅', 25],
+                content: '便宜5元',
+                style: {
+                    fontSize: 8,
+                    fill: 'rgb(44, 188, 152)',
+                    fontWeight: 'bold'
+                },
+                offsetY: -10
+            });
+            
+            chart.render();
+        }
+        
+        function renderPieChart(containerId) {
+            // 客户消费能力分布：80%是腾讯华为员工，月薪1.5万+
+            const data = [
+                { type: '腾讯员工', value: 40, salary: '1.5万+' },
+                { type: '华为员工', value: 40, salary: '1.5万+' },
+                { type: '其他员工', value: 20, salary: '普通' }
+            ];
+            
+            const chart = new G2.Chart({
+                container: containerId,
+                width: 200,
+                height: 100,
+                padding: [10, 10, 10, 10]
+            });
+            
+            chart.data(data);
+            chart.coordinate('theta', {
+                radius: 0.6,
+                innerRadius: 0.3
+            });
+            
+            chart.interval().position('value').color('type', ['rgb(0, 109, 98)', 'rgb(44, 188, 152)', 'rgb(156, 163, 175)']);
+            
+            chart.legend({
+                position: 'right',
+                itemWidth: 60,
+                itemHeight: 12
+            });
+            
+            // 添加中心标注
+            chart.annotation().text({
+                position: ['50%', '50%'],
+                content: '80%\n高薪员工',
+                style: {
+                    fontSize: 10,
+                    fill: 'rgb(0, 109, 98)',
+                    fontWeight: 'bold',
+                    textAlign: 'center'
+                }
+            });
+            
+            chart.render();
+        }
+        
+        function renderProbabilityChart(containerId) {
+            // 赚钱概率分布：70%机会年赚100万以上（保本点60万）
+            const data = [
+                { range: '亏损', probability: 5, color: 'loss' },
+                { range: '60万以下', probability: 25, color: 'breakeven' },
+                { range: '60-100万', probability: 0, color: 'profit' },
+                { range: '100万以上', probability: 70, color: 'highprofit' }
+            ];
+            
+            const chart = new G2.Chart({
+                container: containerId,
+                width: 200,
+                height: 100,
+                padding: [10, 10, 30, 50]
+            });
+            
+            chart.data(data);
+            chart.scale('probability', { min: 0, max: 80 });
+            
+            chart.interval().position('range*probability').color('color', (color) => {
+                switch(color) {
+                    case 'loss': return 'rgb(239, 68, 68)'; // 红色表示亏损
+                    case 'breakeven': return 'rgb(251, 191, 36)'; // 黄色表示保本
+                    case 'profit': return 'rgb(34, 197, 94)'; // 绿色表示盈利
+                    case 'highprofit': return 'rgb(147, 51, 234)'; // 紫色表示高盈利
+                    default: return 'rgb(156, 163, 175)';
+                }
+            });
+            
+            chart.axis('range', {
+                title: null,
+                label: { style: { fontSize: 8 } }
+            });
+            chart.axis('probability', {
+                title: null,
+                label: { style: { fontSize: 9 } }
+            });
+            
+            // 重点标注70%的高盈利概率
+            chart.annotation().text({
+                position: ['100万以上', 70],
+                content: '70%',
+                style: {
+                    fontSize: 10,
+                    fill: 'rgb(147, 51, 234)',
+                    fontWeight: 'bold'
+                },
+                offsetY: -15
+            });
+            
+            chart.render();
+        }
+    </script>
+</body>
+</html> 
