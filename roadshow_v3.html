@@ -144,6 +144,83 @@
             background: white;
             border-radius: 18px 18px 18px 4px;
         }
+        
+        /* AI思考过程样式 */
+        .thinking-container {
+            background: rgba(0, 109, 98, 0.05);
+            border: 1px solid rgba(0, 109, 98, 0.1);
+            border-radius: 12px;
+            padding: 16px;
+            margin: 16px 0;
+            position: relative;
+        }
+        
+        .thinking-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 12px;
+            color: var(--primary);
+            font-weight: 600;
+            font-size: 14px;
+        }
+        
+        .thinking-steps {
+            space-y: 8px;
+        }
+        
+        .thinking-step {
+            opacity: 0;
+            transform: translateX(-10px);
+            animation: thinkingStepIn 0.5s ease-out forwards;
+            padding: 8px 0;
+            border-left: 2px solid var(--primary);
+            padding-left: 12px;
+            margin-left: 8px;
+            font-size: 13px;
+            line-height: 1.5;
+            color: var(--text-primary);
+        }
+        
+        .thinking-step:nth-child(1) { animation-delay: 0.3s; }
+        .thinking-step:nth-child(2) { animation-delay: 0.8s; }
+        .thinking-step:nth-child(3) { animation-delay: 1.3s; }
+        .thinking-step:nth-child(4) { animation-delay: 1.8s; }
+        .thinking-step:nth-child(5) { animation-delay: 2.3s; }
+        
+        @keyframes thinkingStepIn {
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+        
+        .thinking-indicator {
+            display: inline-flex;
+            align-items: center;
+            margin-left: 8px;
+        }
+        
+        .thinking-dot {
+            width: 4px;
+            height: 4px;
+            border-radius: 50%;
+            background-color: var(--primary);
+            margin: 0 2px;
+            animation: thinkingBounce 1.4s infinite ease-in-out both;
+        }
+        
+        .thinking-dot:nth-child(1) { animation-delay: -0.32s; }
+        .thinking-dot:nth-child(2) { animation-delay: -0.16s; }
+        .thinking-dot:nth-child(3) { animation-delay: 0s; }
+        
+        @keyframes thinkingBounce {
+            0%, 80%, 100% {
+                transform: scale(0);
+            }
+            40% {
+                transform: scale(1);
+            }
+        }
     </style>
 </head>
 <body class="bg-brand-background min-h-screen" style="font-family: -apple-system, 'system-ui', 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif;">
@@ -191,8 +268,140 @@
                 </div>
             </div>
 
-            <!-- AI回复消息 -->
-            <div class="flex items-start space-x-3 ai-message">
+            <!-- AI回复将通过JavaScript动态生成 -->
+        </div>
+    </div>
+
+    <!-- 固定底部输入区域 -->
+    <div class="fixed bottom-0 left-0 right-0 bg-brand-background border-t border-gray-200 pt-4 pb-4 z-40">
+        <div class="max-w-4xl mx-auto px-4">
+            <div class="flex items-end space-x-3">
+                <div class="flex-1">
+                    <textarea 
+                        id="messageInput"
+                        placeholder="您可以问我问题哦~" 
+                        class="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl resize-none focus:outline-none focus:border-brand-primary focus:ring-2 focus:ring-brand-primary focus:ring-opacity-20 text-brand-text-primary"
+                        rows="2"
+                        style="font-size: 14px;"
+                    ></textarea>
+                </div>
+                <button onclick="sendMessage()" class="bg-brand-primary text-white px-4 py-3 rounded-xl hover:bg-opacity-90 transition-colors flex items-center justify-center">
+                    <i class="fas fa-paper-plane"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let conversationStep = 0;
+        
+        function selectQuestion(question) {
+            addUserMessage(question);
+            
+            setTimeout(() => {
+                if (question === '盘盘这家店的情况') {
+                    showThinkingProcess('store_analysis', () => showStoreAnalysis());
+                } else if (question === '投别家门店试试') {
+                    showThinkingProcess('alternative_store', () => showAlternativeStore());
+                } else if (question === '给投资这家店算算命，看看是不是真的能赚钱') {
+                    showThinkingProcess('investment_fortune', () => showInvestmentFortune());
+                } else if (question === '给我找几个业内大咖帮忙把把关') {
+                    showThinkingProcess('expert_advice', () => showExpertAdvice());
+                }
+            }, 1000);
+        }
+        
+        // AI思考过程展示函数
+        function showThinkingProcess(type, callback) {
+            const thinkingSteps = getThinkingSteps(type);
+            
+            // 创建思考容器
+            const chatContainer = document.getElementById('chatContainer');
+            const thinkingDiv = document.createElement('div');
+            thinkingDiv.className = 'flex items-start space-x-3 message-enter';
+            thinkingDiv.innerHTML = `
+                <div class="gradient-bg w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0">
+                    <i class="fas fa-robot text-white text-sm"></i>
+                </div>
+                <div class="flex-1">
+                    <p class="text-sm text-brand-text-secondary mb-1">@滴灌通投资小助手</p>
+                    <div class="thinking-container">
+                        <div class="thinking-header">
+                            <i class="fas fa-brain text-brand-primary mr-2"></i>
+                            <span>AI分析思考中</span>
+                            <div class="thinking-indicator">
+                                <div class="thinking-dot"></div>
+                                <div class="thinking-dot"></div>
+                                <div class="thinking-dot"></div>
+                            </div>
+                        </div>
+                        <div class="thinking-steps">
+                            ${thinkingSteps.map(step => `<div class="thinking-step">${step}</div>`).join('')}
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            chatContainer.appendChild(thinkingDiv);
+            
+            // 滚动到页面底部
+            window.scrollTo({
+                top: document.body.scrollHeight,
+                behavior: 'smooth'
+            });
+            
+            // 等待思考动画完成后显示回复
+            setTimeout(() => {
+                callback();
+            }, 3000 + (thinkingSteps.length * 500));
+        }
+        
+        // 获取不同类型的思考步骤
+        function getThinkingSteps(type) {
+            const thinkingStepsMap = {
+                'initial': [
+                    '检索分析滴灌通投资最近3年类似投资案例...',
+                    '根据深圳市地区特点，发现餐饮门店年化收益在20%左右',
+                    '查看牛肉面投资风险案例，主要风险为牛肉采购价上涨',
+                    '配置监管账户体系和风险管控机制',
+                    '综合评定投资等级为A级'
+                ],
+                'store_analysis': [
+                    '检索门店周围3KM商圈热度，总体为高',
+                    '工作日人流量超过10万，非工作日人流量为3万',
+                    '调用人群雷达分析系统，腾讯华为等大厂员工较多',
+                    '对接风险调研机构，发现面临新开面馆竞争',
+                    '分析完成，准备详细报告'
+                ],
+                'investment_fortune': [
+                    '开始校验5000种各类场景下赚钱能力...',
+                    '牛肉价格上涨场景：赚钱概率50%',
+                    '租金价格上涨场景：赚钱概率70%',
+                    '人工成本增加场景：赚钱概率75%',
+                    '检查投资分成安全线：月流水不足40万时降低分成比例'
+                ],
+                'expert_advice': [
+                    '联系普华永道高级审计经理，分析财务情况',
+                    '咨询金杜事务所民商法合伙人，检查法律风险',
+                    '对接风险管控专家，评估老板信用状况',
+                    '发现支付方式和合同条款需要优化',
+                    '汇总专家建议，准备综合评估报告'
+                ],
+                'alternative_store': [
+                    '检索分析最近3年零售行业投资案例...',
+                    '发现连锁便民超市年化收益在15-20%左右',
+                    '查看零售门店风险案例，主要是租金上涨风险',
+                    '配置监管账户和风险管控机制',
+                    '综合评定投资等级为A级'
+                ]
+            };
+            
+            return thinkingStepsMap[type] || thinkingStepsMap['initial'];
+        }
+        
+        // 显示初始投资建议
+        function showInitialResponse() {
+            const content = `
                 <div class="gradient-bg w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0">
                     <i class="fas fa-robot text-white text-sm"></i>
                 </div>
@@ -202,7 +411,7 @@
                         <div class="text-brand-text-primary space-y-3">
                             <p><strong>张总好！</strong>终于等到你，最近又在哪里发财！</p>
                             <p>欢迎来到滴灌通国际投资有限公司(滴灌投资，MIFC)，滴灌通是由前港交所行政总裁李小加与东英金融创始人张高波于2021年联合创立的金融科技集团，致力于通过收入分成模式投资中小企业。</p>
-                            <p><strong>结论：</strong>建议投资"深圳科技园牛师傅牛肉面店"<span class="text-red-600 font-bold text-lg bg-red-50 px-2 py-1 rounded">投资等级为A</span>，超预期的幸福买它！抓紧投资，比银行存款强多了！总融资额是80万，您<strong class="text-red-600 text-lg">投50万占大头</strong>，预计年化收益<strong class="text-red-600 font-bold text-xl bg-yellow-50 px-2 py-1 rounded">11-18万（年化22%-30%）</strong>！</p>
+                            <p><strong>结论：</strong>建议投资"深圳科技园牛师傅牛肉面店"投资等级为A，超预期的幸福买它！抓紧投资，比银行存款强多了！总融资额是80万，您投50万占大头，预计年化收益11-18万（年化22%-30%）！</p>
                         </div>
                     </div>
                     
@@ -329,48 +538,16 @@
                         </div>
                     </div>
                 </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- 固定底部输入区域 -->
-    <div class="fixed bottom-0 left-0 right-0 bg-brand-background border-t border-gray-200 pt-4 pb-4 z-40">
-        <div class="max-w-4xl mx-auto px-4">
-            <div class="flex items-end space-x-3">
-                <div class="flex-1">
-                    <textarea 
-                        id="messageInput"
-                        placeholder="您可以问我问题哦~" 
-                        class="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl resize-none focus:outline-none focus:border-brand-primary focus:ring-2 focus:ring-brand-primary focus:ring-opacity-20 text-brand-text-primary"
-                        rows="2"
-                        style="font-size: 14px;"
-                    ></textarea>
-                </div>
-                <button onclick="sendMessage()" class="bg-brand-primary text-white px-4 py-3 rounded-xl hover:bg-opacity-90 transition-colors flex items-center justify-center">
-                    <i class="fas fa-paper-plane"></i>
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <script>
-        let conversationStep = 0;
-        
-        function selectQuestion(question) {
-            addUserMessage(question);
-            
-            setTimeout(() => {
-                if (question === '盘盘这家店的情况') {
-                    showStoreAnalysis();
-                } else if (question === '投别家门店试试') {
-                    showAlternativeStore();
-                } else if (question === '给投资这家店算算命，看看是不是真的能赚钱') {
-                    showInvestmentFortune();
-                } else if (question === '给我找几个业内大咖帮忙把把关') {
-                    showExpertAdvice();
-                }
-            }, 1000);
+            `;
+            addAIMessage(content);
         }
+        
+        // 页面加载时自动显示初始思考过程和回复
+        window.addEventListener('load', function() {
+            setTimeout(() => {
+                showThinkingProcess('initial', () => showInitialResponse());
+            }, 2000);
+        });
         
         function addUserMessage(message) {
             const chatContainer = document.getElementById('chatContainer');
@@ -418,7 +595,7 @@
                     <div class="message-bubble px-4 py-3 shadow-sm">
                         <div class="text-brand-text-primary space-y-3">
                             <p><strong>张总好！</strong>这家牛肉面店的情况都给您整清楚了！</p>
-                            <p><strong>结论：</strong><span class="text-red-600 font-bold text-lg bg-green-50 px-2 py-1 rounded">位置好、吃饭人多</span>，但<span class="text-orange-600 font-bold">竞争也凶</span>！</p>
+                            <p><strong>结论：</strong>位置好、吃饭人多，但竞争也凶！</p>
                         </div>
                     </div>
                     
@@ -534,8 +711,8 @@
                     <p class="text-sm text-brand-text-secondary mb-1">@滴灌通投资算命小助手</p>
                     <div class="message-bubble px-4 py-3 shadow-sm">
                         <div class="text-brand-text-primary space-y-3">
-                            <p><strong>张总好！</strong>@滴灌通投资算命小助手 我用大数据给您测算了<span class="text-red-600 font-bold text-lg bg-blue-50 px-2 py-1 rounded">5000次</span>，模拟了各种可能性</p>
-                            <p><strong>结论：</strong><span class="text-red-600 font-bold text-lg bg-green-50 px-2 py-1 rounded">十拿九稳能赚钱</span>，但<span class="text-orange-600 font-bold">防着牛肉涨价</span></p>
+                            <p><strong>张总好！</strong>@滴灌通投资算命小助手 我用大数据给您测算了5000次，模拟了各种可能性</p>
+                            <p><strong>结论：</strong>十拿九稳能赚钱，但防着牛肉涨价</p>
                         </div>
                     </div>
                     
@@ -658,8 +835,8 @@
                             <p><strong>张总好！</strong>没问题，这就给您找几个专业的财务、法务、风控大咖帮您参谋一下</p>
                             <div class="bg-brand-background rounded-lg p-3">
                                 <p class="font-semibold text-brand-primary">总结大咖建议：放心投！</p>
-                                <p class="text-sm">只要盯住肉价、押牢设备，年赚<span class="text-red-600 font-bold text-xl bg-yellow-50 px-2 py-1 rounded">22%</span>稳当当！</p>
-                                <p class="text-sm text-red-600 font-bold text-lg animate-pulse bg-red-50 px-2 py-1 rounded">已经有投资人投资了20万了，待融资额就剩60万了，赶紧投！</p>
+                                <p class="text-sm">只要盯住肉价、押牢设备，年赚22%稳当当！</p>
+                                <p class="text-sm text-brand-text-primary">已经有投资人投资了20万了，待融资额就剩60万了，赶紧投！</p>
                             </div>
                         </div>
                     </div>
@@ -770,7 +947,7 @@
                         <div class="flex-1">
                             <p class="text-sm text-brand-text-secondary mb-1">@滴灌通投资小助手</p>
                             <div class="message-bubble px-4 py-3 shadow-sm">
-                                <p class="text-brand-text-primary">感谢您的问题！我们的<span class="text-red-600 font-bold">AI助手</span>正在为您分析更多<span class="text-red-600 font-bold">投资机会</span>，请稍候...</p>
+                                <p class="text-brand-text-primary">感谢您的问题！我们的AI助手正在为您分析更多投资机会，请稍候...</p>
                             </div>
                         </div>
                     `);
@@ -832,7 +1009,7 @@
                     <div class="message-bubble px-4 py-3 shadow-sm">
                         <div class="text-brand-text-primary space-y-3">
                             <p><strong>张总好！</strong>没问题，这里有各种各样的投资机会</p>
-                            <p><strong>结论：</strong>建议投资"北京西单便民超市"，<span class="text-red-600 font-bold text-lg bg-red-50 px-2 py-1 rounded">投资等级为A</span>，稳稳的幸福买它！抓紧投资，比银行存款强多了！总融资额是20万，您可以<strong class="text-red-600 text-lg">投5万试试</strong>，预计年化收益<strong class="text-red-600 font-bold text-xl bg-yellow-50 px-2 py-1 rounded">0.5-1万（年化10%-20%）</strong></p>
+                            <p><strong>结论：</strong>建议投资"北京西单便民超市"，投资等级为A，稳稳的幸福买它！抓紧投资，比银行存款强多了！总融资额是20万，您可以投5万试试，预计年化收益0.5-1万（年化10%-20%）</p>
                         </div>
                     </div>
                     
@@ -862,7 +1039,7 @@
                                             <p class="text-xs text-brand-text-secondary mb-2">分成规则：</p>
                                             <p class="text-xs">月收入≤40万，分您8%</p>
                                             <p class="text-xs">月收入>40万：分您12%</p>
-                                            <p class="text-xs text-brand-secondary font-medium mt-1">多赚多分，收益杠杠的！</p>
+                                            <p class="text-xs text-brand-text-secondary mt-1">多赚多分，收益杠杠的！</p>
                                         </div>
                                     </div>
                                 </div>
