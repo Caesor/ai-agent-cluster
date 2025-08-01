@@ -1,0 +1,1416 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI智能工作台 v3.0 - DialogFlow Studio</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://unpkg.com/@antv/g2plot"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        // Material Design Dark + 金融色彩
+                        'md-primary': '#1E1E1E',       // 主背景
+                        'md-secondary': '#2D2D30',     // 卡片/容器
+                        'md-accent': '#BB86FC',        // 紫色AI智能
+                        'md-accent-2': '#03DAC6',      // 青绿色成功
+                        'md-text': '#FFFFFF',          // 主要文字
+                        'md-text-secondary': '#B3B3B3', // 次要文字
+                        'md-border': '#404040',        // 边框
+                        'finance-gold': '#FFD700',     // 金融黄金色
+                        'finance-success': '#4CAF50',  // 成功绿
+                        'finance-danger': '#F44336',   // 危险红
+                        'finance-warning': '#FF9800'   // 警告橙
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @keyframes sse-stream {
+            0% { opacity: 0; transform: translateY(10px); }
+            100% { opacity: 1; transform: translateY(0); }
+        }
+        
+        .sse-stream-enter {
+            animation: sse-stream 0.3s ease-out;
+        }
+        
+        @keyframes ai-processing {
+            0%, 20% { opacity: 0.3; }
+            50% { opacity: 1; }
+            100% { opacity: 0.3; }
+        }
+        
+        .ai-processing {
+            animation: ai-processing 1.5s infinite;
+        }
+        
+        .ai-processing:nth-child(2) { animation-delay: 0.2s; }
+        .ai-processing:nth-child(3) { animation-delay: 0.4s; }
+        
+        @keyframes gradient-glow {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        
+        .ai-gradient {
+            background: linear-gradient(-45deg, #BB86FC, #03DAC6, #FFD700);
+            background-size: 300% 300%;
+            animation: gradient-glow 3s ease infinite;
+        }
+        
+        .glassmorphism {
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .sse-component {
+            border-left: 3px solid #BB86FC;
+            background: linear-gradient(135deg, #2D2D30 0%, #1E1E1E 100%);
+        }
+        
+        .component-json {
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            font-size: 12px;
+            line-height: 1.4;
+        }
+        
+        .typing-indicator {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        
+        .typing-dot {
+            width: 6px;
+            height: 6px;
+            background: #BB86FC;
+            border-radius: 50%;
+            opacity: 0.3;
+        }
+        
+        .scroll-smooth {
+            scroll-behavior: smooth;
+        }
+        
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #1E1E1E;
+        }
+        
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #404040;
+            border-radius: 3px;
+        }
+        
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #BB86FC;
+        }
+    </style>
+</head>
+
+<body class="bg-md-primary text-md-text min-h-screen">
+    <!-- 主容器 -->
+    <div class="flex h-screen overflow-hidden">
+        <!-- 左侧：AI对话区 -->
+        <div class="w-1/2 flex flex-col border-r border-md-border">
+            <!-- 顶部导航 -->
+            <div class="bg-md-secondary border-b border-md-border p-4">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-8 h-8 ai-gradient rounded-lg flex items-center justify-center">
+                            <i class="fas fa-brain text-white text-sm"></i>
+                        </div>
+                        <div>
+                            <h1 class="text-lg font-semibold">AI智能工作台</h1>
+                            <p class="text-sm text-md-text-secondary">通过自然语言生成SSE组件</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <button onclick="clearWorkspace()" class="px-3 py-1 bg-md-border hover:bg-finance-warning text-xs rounded transition-colors">
+                            <i class="fas fa-trash mr-1"></i>清空
+                        </button>
+                        <button onclick="showComponentLibrary()" class="px-3 py-1 bg-md-accent hover:bg-md-accent/80 text-xs rounded transition-colors">
+                            <i class="fas fa-cube mr-1"></i>组件库
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 对话历史 -->
+            <div id="chatArea" class="flex-1 overflow-y-auto custom-scrollbar p-4 space-y-4">
+                <!-- 欢迎消息 -->
+                <div class="flex items-start space-x-3">
+                    <div class="w-8 h-8 ai-gradient rounded-full flex items-center justify-center flex-shrink-0">
+                        <i class="fas fa-robot text-white text-sm"></i>
+                    </div>
+                    <div class="glassmorphism bg-md-secondary rounded-lg p-4 max-w-md">
+                        <p class="text-sm">👋 欢迎使用AI智能工作台 v3.0！</p>
+                        <p class="text-sm mt-2 text-md-text-secondary">
+                            通过多条自然语言指令，逐步构建完整的SSE组件消息流。您可以一次性描述完整流程，也可以逐步添加组件。
+                        </p>
+                        <div class="mt-3 space-y-1 text-xs text-finance-gold">
+                            <div><i class="fas fa-lightbulb mr-1"></i>完整流程：「创建投资咨询流程，包含欢迎、信息收集、风险评估、产品推荐」</div>
+                            <div><i class="fas fa-plus mr-1"></i>逐步构建：「先创建图表」→「然后添加表单」→「最后加推荐按钮」</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 输入区域 -->
+            <div class="bg-md-secondary border-t border-md-border p-4">
+                <div class="flex items-end space-x-3">
+                    <div class="flex-1">
+                        <textarea 
+                            id="userInput" 
+                            placeholder="描述您需要的金融组件，例如：投资组合图表、风险评估表单..." 
+                            class="w-full bg-md-primary border border-md-border rounded-lg px-4 py-3 text-sm resize-none focus:outline-none focus:border-md-accent transition-colors"
+                            rows="3"
+                            onkeydown="handleInputKeydown(event)"
+                        ></textarea>
+                        <div class="flex justify-between items-center mt-2">
+                            <div class="text-xs text-md-text-secondary">
+                                <span id="charCount">0</span> / 500
+                            </div>
+                            <div class="flex space-x-2">
+                                <button class="text-xs text-md-text-secondary hover:text-md-accent transition-colors" onclick="insertExample('chart')">
+                                    图表示例
+                                </button>
+                                <button class="text-xs text-md-text-secondary hover:text-md-accent transition-colors" onclick="insertExample('form')">
+                                    表单示例
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <button 
+                        id="sendBtn"
+                        onclick="sendMessage()" 
+                        class="bg-md-accent hover:bg-md-accent/80 px-6 py-3 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        disabled
+                    >
+                        <i class="fas fa-paper-plane"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 右侧：SSE组件预览区 -->
+        <div class="w-1/2 flex flex-col">
+            <!-- 预览头部 -->
+            <div class="bg-md-secondary border-b border-md-border p-4">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-8 h-8 bg-md-accent rounded-lg flex items-center justify-center">
+                            <i class="fas fa-eye text-white text-sm"></i>
+                        </div>
+                        <div>
+                            <h2 class="text-lg font-semibold">实时预览</h2>
+                            <p class="text-sm text-md-text-secondary">SSE组件渲染效果</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <button onclick="copyConfiguration()" class="px-3 py-1 bg-finance-success hover:bg-finance-success/80 text-xs rounded transition-colors">
+                            <i class="fas fa-copy mr-1"></i>复制配置
+                        </button>
+                        <button onclick="saveConfiguration()" class="px-3 py-1 bg-finance-gold hover:bg-finance-gold/80 text-black text-xs rounded transition-colors">
+                            <i class="fas fa-save mr-1"></i>保存
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 预览内容 -->
+            <div id="previewArea" class="flex-1 overflow-y-auto custom-scrollbar">
+                <!-- 空状态 -->
+                <div id="emptyPreview" class="h-full flex flex-col items-center justify-center text-center p-8">
+                    <div class="w-20 h-20 bg-md-secondary rounded-full flex items-center justify-center mb-4">
+                        <i class="fas fa-cube text-md-text-secondary text-2xl"></i>
+                    </div>
+                    <h3 class="text-lg font-semibold mb-2">等待组件生成</h3>
+                    <p class="text-md-text-secondary text-sm">
+                        在左侧描述您需要的组件，AI将为您生成专业的SSE配置
+                    </p>
+                </div>
+
+                <!-- 组件预览内容 -->
+                <div id="componentPreview" class="p-4 space-y-4 hidden">
+                    <!-- 动态生成的组件预览 -->
+                </div>
+            </div>
+
+            <!-- 配置信息 -->
+            <div class="bg-md-secondary border-t border-md-border p-4">
+                <div class="flex items-center justify-between mb-2">
+                    <span class="text-sm font-medium">当前配置</span>
+                    <button onclick="toggleConfigView()" class="text-xs text-md-accent hover:text-md-accent/80 transition-colors">
+                        <i class="fas fa-code mr-1"></i>查看JSON
+                    </button>
+                </div>
+                <div id="configSummary" class="text-xs text-md-text-secondary">
+                    尚未生成配置
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 组件库弹窗 -->
+    <div id="componentLibraryModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 hidden">
+        <div class="flex items-center justify-center h-full p-4">
+            <div class="bg-md-secondary rounded-lg w-full max-w-4xl max-h-[80vh] overflow-hidden">
+                <div class="p-6 border-b border-md-border">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-lg font-semibold">SSE组件库</h3>
+                        <button onclick="hideComponentLibrary()" class="text-md-text-secondary hover:text-md-text transition-colors">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="p-6 overflow-y-auto custom-scrollbar max-h-96">
+                    <div class="grid grid-cols-2 gap-4">
+                        <!-- 基础组件 -->
+                        <div class="space-y-3">
+                            <h4 class="font-medium text-md-accent">基础组件</h4>
+                            <div class="space-y-2">
+                                <div class="p-3 bg-md-primary rounded border border-md-border">
+                                    <div class="font-medium text-sm">agent_name</div>
+                                    <div class="text-xs text-md-text-secondary">Agent名称展示</div>
+                                </div>
+                                <div class="p-3 bg-md-primary rounded border border-md-border">
+                                    <div class="font-medium text-sm">suggestions</div>
+                                    <div class="text-xs text-md-text-secondary">推荐问题列表</div>
+                                </div>
+                                <div class="p-3 bg-md-primary rounded border border-md-border">
+                                    <div class="font-medium text-sm">financing_form</div>
+                                    <div class="text-xs text-md-text-secondary">融资表单</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- 扩展组件 -->
+                        <div class="space-y-3">
+                            <h4 class="font-medium text-finance-gold">扩展组件</h4>
+                            <div class="space-y-2">
+                                <div class="p-3 bg-md-primary rounded border border-finance-gold">
+                                    <div class="font-medium text-sm">antv_chart</div>
+                                    <div class="text-xs text-md-text-secondary">AntV专业图表</div>
+                                </div>
+                                <div class="p-3 bg-md-primary rounded border border-finance-gold">
+                                    <div class="font-medium text-sm">antd_form</div>
+                                    <div class="text-xs text-md-text-secondary">AntD专业表单</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- JSON配置查看弹窗 -->
+    <div id="jsonConfigModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 hidden">
+        <div class="flex items-center justify-center h-full p-4">
+            <div class="bg-md-secondary rounded-lg w-full max-w-2xl max-h-[80vh] overflow-hidden">
+                <div class="p-4 border-b border-md-border">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-lg font-semibold">SSE组件配置</h3>
+                        <button onclick="hideJsonConfig()" class="text-md-text-secondary hover:text-md-text transition-colors">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="p-4">
+                    <pre id="jsonConfigContent" class="component-json bg-md-primary p-4 rounded border border-md-border overflow-auto max-h-96 text-md-text-secondary"></pre>
+                    <div class="mt-4 flex justify-end">
+                        <button onclick="copyJsonConfig()" class="px-4 py-2 bg-md-accent hover:bg-md-accent/80 rounded transition-colors">
+                            <i class="fas fa-copy mr-2"></i>复制JSON
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 全局变量
+        let currentConfiguration = null;
+        let componentSequence = []; // 存储组件序列
+        let isProcessing = false;
+        let sessionId = Date.now(); // 会话ID
+
+        // 更新按钮状态
+        function updateSendButtonState() {
+            const userInput = document.getElementById('userInput');
+            const sendBtn = document.getElementById('sendBtn');
+            const charCount = userInput.value.length;
+            
+            document.getElementById('charCount').textContent = charCount;
+            sendBtn.disabled = charCount === 0 || charCount > 500 || isProcessing;
+        }
+
+        // 初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            const userInput = document.getElementById('userInput');
+            const sendBtn = document.getElementById('sendBtn');
+            
+            // 监听输入变化
+            userInput.addEventListener('input', updateSendButtonState);
+            
+            // 初始化字符计数和按钮状态
+            updateSendButtonState();
+        });
+
+        // 处理输入框按键
+        function handleInputKeydown(event) {
+            if (event.key === 'Enter' && (event.ctrlKey || event.metaKey)) {
+                event.preventDefault();
+                sendMessage();
+            }
+        }
+
+        // 插入示例
+        function insertExample(type) {
+            const userInput = document.getElementById('userInput');
+            const examples = {
+                'chart': componentSequence.length === 0 ? 
+                    '我需要一个显示过去12个月基金收益趋势的折线图，包含收益率和基准对比' :
+                    '然后添加一个显示投资组合分布的饼图',
+                'form': componentSequence.length === 0 ?
+                    '创建一个投资风险评估表单，包含年龄、收入、投资经验和风险偏好选择' :
+                    '再加一个客户基本信息收集表单'
+            };
+            
+            userInput.value = examples[type];
+            updateSendButtonState(); // 直接更新按钮状态
+            userInput.focus();
+        }
+
+        // 发送消息
+        function sendMessage() {
+            const userInput = document.getElementById('userInput');
+            const message = userInput.value.trim();
+            
+            if (!message || isProcessing) return;
+            
+            // 添加用户消息
+            addUserMessage(message);
+            
+            // 清空输入框
+            userInput.value = '';
+            updateSendButtonState(); // 直接更新按钮状态
+            
+            // 开始处理
+            isProcessing = true;
+            updateSendButtonState(); // 更新按钮状态
+            processUserRequest(message);
+        }
+
+        // 添加用户消息
+        function addUserMessage(message) {
+            const chatArea = document.getElementById('chatArea');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'flex items-start space-x-3 justify-end sse-stream-enter';
+            
+            messageDiv.innerHTML = `
+                <div class="glassmorphism bg-md-accent rounded-lg p-4 max-w-md">
+                    <p class="text-sm">${message}</p>
+                </div>
+                <div class="w-8 h-8 bg-md-border rounded-full flex items-center justify-center flex-shrink-0">
+                    <i class="fas fa-user text-md-text text-sm"></i>
+                </div>
+            `;
+            
+            chatArea.appendChild(messageDiv);
+            chatArea.scrollTop = chatArea.scrollHeight;
+        }
+
+        // 添加AI思考状态
+        function showAIThinking() {
+            const chatArea = document.getElementById('chatArea');
+            const thinkingDiv = document.createElement('div');
+            thinkingDiv.id = 'aiThinking';
+            thinkingDiv.className = 'flex items-start space-x-3 sse-stream-enter';
+            
+            thinkingDiv.innerHTML = `
+                <div class="w-8 h-8 ai-gradient rounded-full flex items-center justify-center flex-shrink-0">
+                    <i class="fas fa-brain text-white text-sm"></i>
+                </div>
+                <div class="glassmorphism bg-md-secondary rounded-lg p-4">
+                    <div class="typing-indicator">
+                        <span class="text-sm text-md-text-secondary mr-2">AI正在理解您的需求</span>
+                        <div class="typing-dot ai-processing"></div>
+                        <div class="typing-dot ai-processing"></div>
+                        <div class="typing-dot ai-processing"></div>
+                    </div>
+                </div>
+            `;
+            
+            chatArea.appendChild(thinkingDiv);
+            chatArea.scrollTop = chatArea.scrollHeight;
+        }
+
+        // 隐藏AI思考状态
+        function hideAIThinking() {
+            const thinkingDiv = document.getElementById('aiThinking');
+            if (thinkingDiv) {
+                thinkingDiv.remove();
+            }
+        }
+
+        // 添加AI消息
+        function addAIMessage(message, isStream = false) {
+            const chatArea = document.getElementById('chatArea');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'flex items-start space-x-3 sse-stream-enter';
+            
+            messageDiv.innerHTML = `
+                <div class="w-8 h-8 ai-gradient rounded-full flex items-center justify-center flex-shrink-0">
+                    <i class="fas fa-robot text-white text-sm"></i>
+                </div>
+                <div class="glassmorphism bg-md-secondary rounded-lg p-4 max-w-md">
+                    <p class="text-sm">${message}</p>
+                    ${isStream ? '<div class="mt-2 text-xs text-finance-gold"><i class="fas fa-stream mr-1"></i>正在生成SSE组件...</div>' : ''}
+                </div>
+            `;
+            
+            chatArea.appendChild(messageDiv);
+            chatArea.scrollTop = chatArea.scrollHeight;
+        }
+
+        // 处理用户请求
+        function processUserRequest(message) {
+            showAIThinking();
+            
+            // 模拟AI理解过程
+            setTimeout(() => {
+                hideAIThinking();
+                
+                // AI回复
+                const response = analyzeUserRequest(message);
+                addAIMessage(response.message, true);
+                
+                // 开始SSE流模拟
+                setTimeout(() => {
+                    simulateSSEStream(response, message);
+                }, 1000);
+                
+            }, 2000);
+        }
+
+        // 分析用户请求
+        function analyzeUserRequest(message) {
+            const lowerMessage = message.toLowerCase();
+            
+            // 检查是否是完整流程描述
+            if (lowerMessage.includes('流程') || lowerMessage.includes('完整') || lowerMessage.includes('咨询') && lowerMessage.includes('包含')) {
+                return {
+                    message: '我理解了！您需要创建一个完整的投资咨询流程。我将为您生成包含多个组件的完整SSE消息序列。',
+                    componentType: 'complete_flow',
+                    isSequence: true
+                };
+            }
+            
+            // 检查是否是追加组件
+            const isAppending = componentSequence.length > 0 && (
+                lowerMessage.includes('再') || lowerMessage.includes('然后') || 
+                lowerMessage.includes('接下来') || lowerMessage.includes('最后') ||
+                lowerMessage.includes('添加') || lowerMessage.includes('加上')
+            );
+            
+            let componentType, responseMessage;
+            
+            if (lowerMessage.includes('图表') || lowerMessage.includes('chart') || lowerMessage.includes('趋势') || lowerMessage.includes('收益')) {
+                componentType = 'chart';
+                responseMessage = isAppending ? 
+                    '好的！我将为您的流程添加一个投资收益图表组件。' :
+                    '我理解了！您需要一个投资收益图表。我将为您生成一个AntV折线图组件。';
+            } else if (lowerMessage.includes('表单') || lowerMessage.includes('form') || lowerMessage.includes('评估') || lowerMessage.includes('问卷') || lowerMessage.includes('信息收集')) {
+                componentType = 'form';
+                responseMessage = isAppending ?
+                    '明白了！我将在现有流程中添加一个信息收集表单。' :
+                    '明白了！您需要一个风险评估表单。我将为您生成一个AntD表单组件。';
+            } else if (lowerMessage.includes('卡片') || lowerMessage.includes('产品') || lowerMessage.includes('推荐')) {
+                componentType = 'card';
+                responseMessage = isAppending ?
+                    '好的！我将为您的流程添加产品推荐卡片。' :
+                    '好的！您需要产品展示卡片。我将为您生成金融产品卡片组件。';
+            } else if (lowerMessage.includes('欢迎') || lowerMessage.includes('介绍') || lowerMessage.includes('开场')) {
+                componentType = 'welcome';
+                responseMessage = isAppending ?
+                    '我将为您的流程添加一个欢迎介绍组件。' :
+                    '我将为您创建一个欢迎介绍组件。';
+            } else {
+                componentType = 'generic';
+                responseMessage = isAppending ?
+                    '我将根据您的描述为现有流程添加相应组件。' :
+                    '我将根据您的描述生成相应的SSE组件配置。';
+            }
+            
+            return {
+                message: responseMessage,
+                componentType,
+                isAppending
+            };
+        }
+
+        // 模拟SSE流生成
+        function simulateSSEStream(response, userMessage) {
+            const emptyPreview = document.getElementById('emptyPreview');
+            const componentPreview = document.getElementById('componentPreview');
+            
+            // 隐藏空状态，显示预览区
+            emptyPreview.classList.add('hidden');
+            componentPreview.classList.remove('hidden');
+            
+            // 处理完整流程生成
+            if (response.componentType === 'complete_flow') {
+                generateCompleteFlow(userMessage);
+                return;
+            }
+            
+            // 生成单个组件配置
+            let config = generateSingleComponent(response.componentType, userMessage);
+            
+            // 添加到组件序列
+            if (response.isAppending) {
+                componentSequence.push(config);
+                addAIMessage(`✅ 已添加${getComponentTypeName(config.type)}到您的流程中。当前流程包含${componentSequence.length}个组件。`);
+            } else {
+                // 开始新的序列
+                componentSequence = [config];
+                addAIMessage(`✅ 已创建${getComponentTypeName(config.type)}。您可以继续添加更多组件来构建完整流程。`);
+            }
+            
+            // 存储当前完整配置
+            currentConfiguration = {
+                sessionId: sessionId,
+                timestamp: new Date().toISOString(),
+                components: [...componentSequence]
+            };
+            
+            // 渲染完整序列
+            renderComponentSequence();
+            
+            // 更新配置摘要
+            updateSequenceSummary();
+            
+            // 完成处理
+            setTimeout(() => {
+                isProcessing = false;
+                updateSendButtonState(); // 更新按钮状态
+                
+                // 根据当前序列长度提供建议
+                if (componentSequence.length === 1) {
+                    addAIMessage('💡 您可以继续说"然后添加表单"或"再加一个图表"来构建完整的对话流程。');
+                } else if (componentSequence.length >= 3) {
+                    addAIMessage('🎉 您的对话流程已经很完整了！可以保存配置或继续添加更多组件。');
+                }
+            }, 2000);
+        }
+        
+        // 生成完整流程
+        function generateCompleteFlow(userMessage) {
+            // 预定义的完整投资咨询流程
+            const completeFlowSequence = [
+                generateWelcomeConfig(),
+                generateFormConfig('用户信息收集'),
+                generateFormConfig('风险评估问卷'),
+                generateChartConfig('收益展示'),
+                generateCardConfig('产品推荐')
+            ];
+            
+            componentSequence = completeFlowSequence;
+            currentConfiguration = {
+                sessionId: sessionId,
+                timestamp: new Date().toISOString(),
+                components: [...componentSequence]
+            };
+            
+            // 逐步渲染流程
+            let index = 0;
+            const renderNext = () => {
+                if (index < completeFlowSequence.length) {
+                    const component = completeFlowSequence[index];
+                    addAIMessage(`正在生成: ${getComponentTypeName(component.type)}...`);
+                    
+                    setTimeout(() => {
+                        renderComponentSequence();
+                        updateSequenceSummary();
+                        index++;
+                        
+                        if (index < completeFlowSequence.length) {
+                            setTimeout(renderNext, 1000);
+                        } else {
+                            isProcessing = false;
+                            updateSendButtonState(); // 更新按钮状态
+                            addAIMessage('🎉 完整的投资咨询流程已生成！包含欢迎、信息收集、风险评估、数据展示和产品推荐。');
+                        }
+                    }, 800);
+                }
+            };
+            
+            renderNext();
+        }
+        
+        // 生成单个组件
+        function generateSingleComponent(componentType, userMessage) {
+            switch (componentType) {
+                case 'chart':
+                    return generateChartConfig(userMessage);
+                case 'form':
+                    return generateFormConfig(userMessage);
+                case 'card':
+                    return generateCardConfig(userMessage);
+                case 'welcome':
+                    return generateWelcomeConfig(userMessage);
+                default:
+                    return generateGenericConfig(userMessage);
+            }
+        }
+
+        // 生成图表配置
+        function generateChartConfig(userMessage) {
+            return {
+                type: "antv_chart",
+                props: {
+                    chartType: "line",
+                    title: "基金收益趋势图",
+                    data: [
+                        {"month": "2023-01", "收益率": 5.2, "基准": 4.8},
+                        {"month": "2023-02", "收益率": 6.1, "基准": 5.2},
+                        {"month": "2023-03", "收益率": 4.8, "基准": 4.9},
+                        {"month": "2023-04", "收益率": 7.3, "基准": 6.1},
+                        {"month": "2023-05", "收益率": 8.1, "基准": 6.8},
+                        {"month": "2023-06", "收益率": 6.9, "基准": 6.2},
+                        {"month": "2023-07", "收益率": 9.2, "基准": 7.5},
+                        {"month": "2023-08", "收益率": 8.7, "基准": 7.8},
+                        {"month": "2023-09", "收益率": 10.1, "基准": 8.9},
+                        {"month": "2023-10", "收益率": 9.8, "基准": 8.6},
+                        {"month": "2023-11", "收益率": 11.2, "基准": 9.4},
+                        {"month": "2023-12", "收益率": 12.5, "基准": 10.2}
+                    ],
+                    config: {
+                        xField: "month",
+                        yField: "收益率",
+                        seriesField: "type",
+                        color: ["#BB86FC", "#03DAC6"],
+                        smooth: true,
+                        point: {
+                            size: 4
+                        }
+                    },
+                    description: "展示过去12个月的基金收益表现与基准对比"
+                }
+            };
+        }
+
+        // 生成表单配置
+        function generateFormConfig(userMessage) {
+            return {
+                type: "antd_form",
+                props: {
+                    title: "投资风险评估",
+                    description: "请完善以下信息，我们将为您提供个性化投资建议",
+                    formFields: [
+                        {
+                            type: "input",
+                            name: "name",
+                            label: "姓名",
+                            required: true,
+                            placeholder: "请输入您的姓名"
+                        },
+                        {
+                            type: "select",
+                            name: "age",
+                            label: "年龄段",
+                            required: true,
+                            options: [
+                                {"label": "25-35岁", "value": "25-35"},
+                                {"label": "35-45岁", "value": "35-45"},
+                                {"label": "45-55岁", "value": "45-55"},
+                                {"label": "55-65岁", "value": "55-65"}
+                            ]
+                        },
+                        {
+                            type: "select",
+                            name: "income",
+                            label: "年收入",
+                            required: true,
+                            options: [
+                                {"label": "10万以下", "value": "10w-"},
+                                {"label": "10-30万", "value": "10-30w"},
+                                {"label": "30-50万", "value": "30-50w"},
+                                {"label": "50万以上", "value": "50w+"}
+                            ]
+                        },
+                        {
+                            type: "radio",
+                            name: "experience",
+                            label: "投资经验",
+                            required: true,
+                            options: [
+                                {"label": "新手投资者", "value": "beginner"},
+                                {"label": "有一定经验", "value": "intermediate"},
+                                {"label": "资深投资者", "value": "expert"}
+                            ]
+                        },
+                        {
+                            type: "radio",
+                            name: "riskLevel",
+                            label: "风险偏好",
+                            required: true,
+                            options: [
+                                {"label": "保守型（低风险）", "value": "conservative"},
+                                {"label": "稳健型（中风险）", "value": "moderate"},
+                                {"label": "积极型（高风险）", "value": "aggressive"}
+                            ]
+                        },
+                        {
+                            type: "slider",
+                            name: "investAmount",
+                            label: "计划投资金额（万元）",
+                            min: 1,
+                            max: 500,
+                            default: 10
+                        }
+                    ],
+                    submitText: "提交评估",
+                    layout: "vertical"
+                }
+            };
+        }
+
+        // 生成卡片配置
+        function generateCardConfig(userMessage) {
+            return {
+                type: "financing_assistant_card",
+                props: [
+                    {
+                        name: "智投宝",
+                        slogan: "AI智能投资，稳健收益",
+                        description: "基于大数据分析的智能投资顾问",
+                        riskLevel: "中低风险",
+                        expectedReturn: "年化6-8%",
+                        minInvestment: "1万起投"
+                    },
+                    {
+                        name: "成长通",
+                        slogan: "把握成长机遇，分享企业价值",
+                        description: "专注成长股投资的专业产品",
+                        riskLevel: "中高风险",
+                        expectedReturn: "年化8-12%",
+                        minInvestment: "5万起投"
+                    },
+                    {
+                        name: "稳健盈",
+                        slogan: "稳健理财，安心收益",
+                        description: "低风险固收类理财产品",
+                        riskLevel: "低风险",
+                        expectedReturn: "年化4-6%",
+                        minInvestment: "1000元起投"
+                    }
+                ]
+            };
+        }
+
+        // 生成欢迎配置
+        function generateWelcomeConfig(userMessage) {
+            return {
+                type: "agent_name",
+                props: {
+                    name: "智投AI助手",
+                    description: "您的专业投资顾问，为您提供个性化投资建议和专业分析。",
+                    avatar: "🤖",
+                    welcomeMessage: "欢迎使用智能投资咨询服务！我将为您提供专业的投资建议。"
+                }
+            };
+        }
+
+        // 生成通用配置
+        function generateGenericConfig(userMessage) {
+            return {
+                type: "suggestions",
+                props: [
+                    {
+                        text: "了解更多投资产品",
+                        disabled: false
+                    },
+                    {
+                        text: "预约专业投资顾问",
+                        disabled: false
+                    },
+                    {
+                        text: "查看投资案例",
+                        disabled: false
+                    }
+                ]
+            };
+        }
+
+        // 渲染组件序列
+        function renderComponentSequence() {
+            const componentPreview = document.getElementById('componentPreview');
+            
+            // 清空现有内容
+            componentPreview.innerHTML = '';
+            
+            // 添加序列标题
+            const sequenceHeader = document.createElement('div');
+            sequenceHeader.className = 'mb-4 p-3 bg-md-secondary rounded-lg border border-md-accent';
+            sequenceHeader.innerHTML = `
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h3 class="font-semibold text-md-accent">SSE消息流序列</h3>
+                        <p class="text-sm text-md-text-secondary">共 ${componentSequence.length} 个组件</p>
+                    </div>
+                    <div class="flex space-x-2">
+                        <button onclick="reorderSequence()" class="text-xs px-2 py-1 bg-md-border hover:bg-md-accent rounded transition-colors">
+                            <i class="fas fa-sort mr-1"></i>排序
+                        </button>
+                        <button onclick="clearSequence()" class="text-xs px-2 py-1 bg-finance-danger hover:bg-finance-danger/80 rounded transition-colors">
+                            <i class="fas fa-trash mr-1"></i>清空
+                        </button>
+                    </div>
+                </div>
+            `;
+            componentPreview.appendChild(sequenceHeader);
+            
+            // 渲染每个组件
+            componentSequence.forEach((config, index) => {
+                const componentDiv = document.createElement('div');
+                componentDiv.className = 'sse-component rounded-lg p-4 mb-4 sse-stream-enter';
+                componentDiv.style.animationDelay = `${index * 0.1}s`;
+                
+                // 添加组件序号和操作按钮
+                const componentHeader = document.createElement('div');
+                componentHeader.className = 'flex items-center justify-between mb-3 pb-2 border-b border-md-border';
+                componentHeader.innerHTML = `
+                    <div class="flex items-center space-x-2">
+                        <span class="w-6 h-6 bg-md-accent rounded-full flex items-center justify-center text-xs font-bold">${index + 1}</span>
+                        <span class="text-sm font-medium text-md-accent">${getComponentTypeName(config.type)}</span>
+                    </div>
+                    <div class="flex space-x-1">
+                        <button onclick="editComponent(${index})" class="text-xs px-2 py-1 bg-md-border hover:bg-finance-warning rounded transition-colors">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button onclick="deleteComponent(${index})" class="text-xs px-2 py-1 bg-md-border hover:bg-finance-danger rounded transition-colors">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                `;
+                
+                const componentContent = document.createElement('div');
+                
+                // 根据组件类型渲染内容
+                switch (config.type) {
+                    case 'antv_chart':
+                        componentContent.innerHTML = renderChartComponent(config, index);
+                        break;
+                    case 'antd_form':
+                        componentContent.innerHTML = renderFormComponent(config, index);
+                        break;
+                    case 'financing_assistant_card':
+                        componentContent.innerHTML = renderCardComponent(config, index);
+                        break;
+                    case 'agent_name':
+                        componentContent.innerHTML = renderWelcomeComponent(config, index);
+                        break;
+                    default:
+                        componentContent.innerHTML = renderGenericComponent(config, index);
+                }
+                
+                componentDiv.appendChild(componentHeader);
+                componentDiv.appendChild(componentContent);
+                componentPreview.appendChild(componentDiv);
+                
+                // 如果是图表，初始化图表
+                if (config.type === 'antv_chart') {
+                    setTimeout(() => {
+                        initializeChart(config, index);
+                    }, 100 + index * 100);
+                }
+            });
+        }
+        
+        // 更新序列摘要
+        function updateSequenceSummary() {
+            const configSummary = document.getElementById('configSummary');
+            if (componentSequence.length === 0) {
+                configSummary.innerHTML = '尚未生成配置';
+                return;
+            }
+            
+            const componentTypes = componentSequence.map(c => getComponentTypeName(c.type)).join(', ');
+            configSummary.innerHTML = `
+                序列长度: ${componentSequence.length} | 
+                组件类型: ${componentTypes} | 
+                状态: <span class="text-finance-success">已生成</span>
+            `;
+        }
+
+        // 渲染欢迎组件
+        function renderWelcomeComponent(config, index = 0) {
+            return `
+                <div class="space-y-4">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h3 class="font-semibold text-md-accent">${config.props.name}</h3>
+                            <p class="text-sm text-md-text-secondary">${config.props.description}</p>
+                        </div>
+                        <span class="text-xs bg-md-accent/20 text-md-accent px-2 py-1 rounded">欢迎组件</span>
+                    </div>
+                    <div class="bg-md-primary rounded-lg p-4">
+                        <div class="flex items-center space-x-3 mb-3">
+                            <div class="w-12 h-12 ai-gradient rounded-full flex items-center justify-center text-lg">
+                                ${config.props.avatar || '🤖'}
+                            </div>
+                            <div>
+                                <h4 class="font-semibold text-finance-gold">${config.props.name}</h4>
+                                <p class="text-xs text-md-text-secondary">${config.props.description}</p>
+                            </div>
+                        </div>
+                        <div class="bg-md-secondary rounded p-3">
+                            <p class="text-sm">${config.props.welcomeMessage}</p>
+                        </div>
+                    </div>
+                    <div class="text-xs text-md-text-secondary">
+                        <i class="fas fa-info-circle mr-1"></i>
+                        Agent名称组件 | 欢迎消息
+                    </div>
+                </div>
+            `;
+        }
+
+        // 渲染图表组件
+        function renderChartComponent(config, index = 0) {
+            return `
+                <div class="space-y-4">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h3 class="font-semibold text-md-accent">${config.props.title}</h3>
+                            <p class="text-sm text-md-text-secondary">${config.props.description}</p>
+                        </div>
+                        <span class="text-xs bg-finance-gold/20 text-finance-gold px-2 py-1 rounded">AntV图表</span>
+                    </div>
+                    <div id="chartContainer_${index}" class="bg-md-primary rounded p-4" style="height: 300px;">
+                        <!-- 图表将在这里渲染 -->
+                    </div>
+                    <div class="text-xs text-md-text-secondary">
+                        <i class="fas fa-info-circle mr-1"></i>
+                        数据点: ${config.props.data.length} | 图表类型: ${config.props.chartType}
+                    </div>
+                </div>
+            `;
+        }
+
+        // 渲染表单组件
+        function renderFormComponent(config, index = 0) {
+            let formHTML = `
+                <div class="space-y-4">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h3 class="font-semibold text-md-accent">${config.props.title}</h3>
+                            <p class="text-sm text-md-text-secondary">${config.props.description}</p>
+                        </div>
+                        <span class="text-xs bg-md-accent/20 text-md-accent px-2 py-1 rounded">AntD表单</span>
+                    </div>
+                    <div class="bg-md-primary rounded p-4 space-y-4">
+            `;
+            
+            config.props.formFields.forEach(field => {
+                formHTML += `<div class="space-y-2">`;
+                formHTML += `<label class="text-sm font-medium text-md-text">${field.label}${field.required ? ' *' : ''}</label>`;
+                
+                switch (field.type) {
+                    case 'input':
+                        formHTML += `<input type="text" placeholder="${field.placeholder}" class="w-full bg-md-secondary border border-md-border rounded px-3 py-2 text-sm" />`;
+                        break;
+                    case 'select':
+                        formHTML += `<select class="w-full bg-md-secondary border border-md-border rounded px-3 py-2 text-sm">`;
+                        field.options.forEach(option => {
+                            formHTML += `<option value="${option.value}">${option.label}</option>`;
+                        });
+                        formHTML += `</select>`;
+                        break;
+                    case 'radio':
+                        field.options.forEach(option => {
+                            formHTML += `
+                                <label class="flex items-center space-x-2 text-sm">
+                                    <input type="radio" name="${field.name}" value="${option.value}" class="text-md-accent" />
+                                    <span>${option.label}</span>
+                                </label>
+                            `;
+                        });
+                        break;
+                    case 'slider':
+                        formHTML += `
+                            <div class="space-y-2">
+                                <input type="range" min="${field.min}" max="${field.max}" value="${field.default}" class="w-full" />
+                                <div class="text-xs text-md-text-secondary">${field.min} - ${field.max} 万元</div>
+                            </div>
+                        `;
+                        break;
+                }
+                formHTML += `</div>`;
+            });
+            
+            formHTML += `
+                        <button class="w-full bg-md-accent hover:bg-md-accent/80 text-white py-2 rounded transition-colors">
+                            ${config.props.submitText}
+                        </button>
+                    </div>
+                    <div class="text-xs text-md-text-secondary">
+                        <i class="fas fa-info-circle mr-1"></i>
+                        字段数: ${config.props.formFields.length} | 布局: ${config.props.layout}
+                    </div>
+                </div>
+            `;
+            
+            return formHTML;
+        }
+
+        // 渲染卡片组件
+        function renderCardComponent(config, index = 0) {
+            let cardsHTML = `
+                <div class="space-y-4">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h3 class="font-semibold text-md-accent">金融产品推荐</h3>
+                            <p class="text-sm text-md-text-secondary">为您精选的投资产品</p>
+                        </div>
+                        <span class="text-xs bg-finance-success/20 text-finance-success px-2 py-1 rounded">产品卡片</span>
+                    </div>
+                    <div class="space-y-3">
+            `;
+            
+            config.props.forEach(card => {
+                cardsHTML += `
+                    <div class="bg-md-primary rounded-lg p-4 border border-md-border hover:border-md-accent transition-colors">
+                        <div class="flex items-start justify-between">
+                            <div class="flex-1">
+                                <h4 class="font-semibold text-finance-gold">${card.name}</h4>
+                                <p class="text-sm text-md-text-secondary mt-1">${card.slogan}</p>
+                                <p class="text-xs text-md-text-secondary mt-2">${card.description}</p>
+                            </div>
+                            <div class="text-right text-xs space-y-1">
+                                <div class="text-finance-success">${card.expectedReturn}</div>
+                                <div class="text-md-text-secondary">${card.riskLevel}</div>
+                            </div>
+                        </div>
+                        <div class="mt-3 flex items-center justify-between">
+                            <span class="text-xs text-md-text-secondary">${card.minInvestment}</span>
+                            <button class="px-3 py-1 bg-md-accent hover:bg-md-accent/80 text-xs rounded transition-colors">
+                                了解详情
+                            </button>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            cardsHTML += `
+                    </div>
+                    <div class="text-xs text-md-text-secondary">
+                        <i class="fas fa-info-circle mr-1"></i>
+                        产品数量: ${config.props.length} | 类型: 金融产品卡片
+                    </div>
+                </div>
+            `;
+            
+            return cardsHTML;
+        }
+
+        // 渲染通用组件
+        function renderGenericComponent(config, index = 0) {
+            let buttonsHTML = `
+                <div class="space-y-4">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h3 class="font-semibold text-md-accent">推荐操作</h3>
+                            <p class="text-sm text-md-text-secondary">您可以选择以下操作</p>
+                        </div>
+                        <span class="text-xs bg-md-accent-2/20 text-md-accent-2 px-2 py-1 rounded">推荐按钮</span>
+                    </div>
+                    <div class="space-y-2">
+            `;
+            
+            config.props.forEach(suggestion => {
+                buttonsHTML += `
+                    <button class="w-full text-left p-3 bg-md-primary border border-md-border rounded hover:border-md-accent transition-colors ${suggestion.disabled ? 'opacity-50 cursor-not-allowed' : ''}">
+                        <i class="fas fa-arrow-right text-md-accent mr-2"></i>
+                        ${suggestion.text}
+                    </button>
+                `;
+            });
+            
+            buttonsHTML += `
+                    </div>
+                    <div class="text-xs text-md-text-secondary">
+                        <i class="fas fa-info-circle mr-1"></i>
+                        选项数量: ${config.props.length}
+                    </div>
+                </div>
+            `;
+            
+            return buttonsHTML;
+        }
+
+        // 初始化图表
+        function initializeChart(config, index = 0) {
+            const container = document.getElementById(`chartContainer_${index}`);
+            if (!container) return;
+            
+            // 创建简单的Canvas图表模拟
+            container.innerHTML = `
+                <canvas id="myChart_${index}" width="100%" height="300"></canvas>
+            `;
+            
+            const canvas = document.getElementById(`myChart_${index}`);
+            const ctx = canvas.getContext('2d');
+            
+            // 绘制简单折线图
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: config.props.data.map(d => d.month),
+                    datasets: [
+                        {
+                            label: '收益率',
+                            data: config.props.data.map(d => d.收益率),
+                            borderColor: '#BB86FC',
+                            backgroundColor: 'rgba(187, 134, 252, 0.1)',
+                            tension: 0.4
+                        },
+                        {
+                            label: '基准',
+                            data: config.props.data.map(d => d.基准),
+                            borderColor: '#03DAC6',
+                            backgroundColor: 'rgba(3, 218, 198, 0.1)',
+                            tension: 0.4
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            labels: {
+                                color: '#B3B3B3'
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            ticks: {
+                                color: '#B3B3B3'
+                            },
+                            grid: {
+                                color: '#404040'
+                            }
+                        },
+                        y: {
+                            ticks: {
+                                color: '#B3B3B3'
+                            },
+                            grid: {
+                                color: '#404040'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+
+
+        // 获取组件类型名称
+        function getComponentTypeName(type) {
+            const typeNames = {
+                'antv_chart': 'AntV图表',
+                'antd_form': 'AntD表单',
+                'financing_assistant_card': '金融产品卡片',
+                'agent_name': '欢迎组件',
+                'suggestions': '推荐按钮'
+            };
+            return typeNames[type] || '未知组件';
+        }
+        
+        // 组件序列管理函数
+        function editComponent(index) {
+            alert(`编辑组件 ${index + 1}：${getComponentTypeName(componentSequence[index].type)}`);
+            // TODO: 实现组件编辑功能
+        }
+        
+        function deleteComponent(index) {
+            if (confirm(`确定要删除组件 ${index + 1}：${getComponentTypeName(componentSequence[index].type)} 吗？`)) {
+                componentSequence.splice(index, 1);
+                currentConfiguration = {
+                    sessionId: sessionId,
+                    timestamp: new Date().toISOString(),
+                    components: [...componentSequence]
+                };
+                renderComponentSequence();
+                updateSequenceSummary();
+                
+                addAIMessage(`✅ 已删除组件。当前流程包含${componentSequence.length}个组件。`);
+            }
+        }
+        
+        function clearSequence() {
+            if (confirm('确定要清空整个组件序列吗？')) {
+                componentSequence = [];
+                currentConfiguration = null;
+                
+                const emptyPreview = document.getElementById('emptyPreview');
+                const componentPreview = document.getElementById('componentPreview');
+                emptyPreview.classList.remove('hidden');
+                componentPreview.classList.add('hidden');
+                
+                updateSequenceSummary();
+                addAIMessage('🗑️ 组件序列已清空。您可以重新开始创建。');
+            }
+        }
+        
+        function reorderSequence() {
+            alert('排序功能开发中，敬请期待！');
+            // TODO: 实现拖拽排序功能
+        }
+
+        // 复制配置
+        function copyConfiguration() {
+            if (!currentConfiguration || componentSequence.length === 0) {
+                alert('尚未生成组件序列');
+                return;
+            }
+            
+            const sseMessageFlow = {
+                sessionId: currentConfiguration.sessionId,
+                timestamp: currentConfiguration.timestamp,
+                messageCount: componentSequence.length,
+                messages: componentSequence.map((component, index) => ({
+                    id: `msg_${index + 1}`,
+                    type: "sse_component",
+                    component: component
+                }))
+            };
+            
+            const configJSON = JSON.stringify(sseMessageFlow, null, 2);
+            navigator.clipboard.writeText(configJSON).then(() => {
+                alert(`✅ SSE消息流配置已复制到剪贴板\n包含 ${componentSequence.length} 个组件`);
+            }).catch(() => {
+                alert('❌ 复制失败，请手动复制');
+            });
+        }
+
+        // 保存配置
+        function saveConfiguration() {
+            if (!currentConfiguration || componentSequence.length === 0) {
+                alert('尚未生成组件序列');
+                return;
+            }
+            
+            // 模拟保存到本地存储
+            const sseMessageFlow = {
+                sessionId: currentConfiguration.sessionId,
+                timestamp: currentConfiguration.timestamp,
+                messageCount: componentSequence.length,
+                messages: componentSequence.map((component, index) => ({
+                    id: `msg_${index + 1}`,
+                    type: "sse_component",
+                    component: component
+                }))
+            };
+            
+            localStorage.setItem(`sse_config_${currentConfiguration.sessionId}`, JSON.stringify(sseMessageFlow));
+            alert(`✅ SSE消息流配置已保存\n会话ID: ${currentConfiguration.sessionId}\n组件数量: ${componentSequence.length}`);
+            console.log('保存的SSE消息流配置:', sseMessageFlow);
+        }
+
+        // 显示组件库
+        function showComponentLibrary() {
+            document.getElementById('componentLibraryModal').classList.remove('hidden');
+        }
+
+        // 隐藏组件库
+        function hideComponentLibrary() {
+            document.getElementById('componentLibraryModal').classList.add('hidden');
+        }
+
+        // 显示JSON配置
+        function toggleConfigView() {
+            if (!currentConfiguration || componentSequence.length === 0) {
+                alert('尚未生成组件序列');
+                return;
+            }
+            
+            const sseMessageFlow = {
+                sessionId: currentConfiguration.sessionId,
+                timestamp: currentConfiguration.timestamp,
+                messageCount: componentSequence.length,
+                messages: componentSequence.map((component, index) => ({
+                    id: `msg_${index + 1}`,
+                    type: "sse_component",
+                    component: component
+                }))
+            };
+            
+            const modal = document.getElementById('jsonConfigModal');
+            const content = document.getElementById('jsonConfigContent');
+            content.textContent = JSON.stringify(sseMessageFlow, null, 2);
+            modal.classList.remove('hidden');
+        }
+
+        // 隐藏JSON配置
+        function hideJsonConfig() {
+            document.getElementById('jsonConfigModal').classList.add('hidden');
+        }
+
+        // 复制JSON配置
+        function copyJsonConfig() {
+            const content = document.getElementById('jsonConfigContent').textContent;
+            navigator.clipboard.writeText(content).then(() => {
+                alert('✅ JSON配置已复制到剪贴板');
+                hideJsonConfig();
+            }).catch(() => {
+                alert('❌ 复制失败');
+            });
+        }
+
+        // 清空工作区
+        function clearWorkspace() {
+            if (confirm('确定要清空当前工作区吗？')) {
+                // 清空聊天记录（保留欢迎消息）
+                const chatArea = document.getElementById('chatArea');
+                const messages = chatArea.querySelectorAll('.sse-stream-enter');
+                messages.forEach(msg => msg.remove());
+                
+                // 重置预览区
+                document.getElementById('emptyPreview').classList.remove('hidden');
+                document.getElementById('componentPreview').classList.add('hidden');
+                
+                // 重置组件序列和配置
+                componentSequence = [];
+                currentConfiguration = null;
+                sessionId = Date.now();
+                
+                // 重置配置摘要
+                updateSequenceSummary();
+                
+                // 重置状态
+                isProcessing = false;
+                updateSendButtonState(); // 更新按钮状态
+                
+                addAIMessage('🆕 工作区已清空，您可以重新开始创建SSE组件序列。');
+            }
+        }
+    </script>
+</body>
+</html>
